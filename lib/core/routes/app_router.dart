@@ -2,12 +2,12 @@ import 'package:go_router/go_router.dart';
 import '../../features/splash/screens/splash_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/set_password_screen.dart';
-import '../../features/auth/screens/admin_set_password_screen.dart';
-import '../../features/auth/screens/nurse_set_password_screen.dart';
-import '../../features/admin/admin_main_wrapper.dart';
-import '../../features/nurse/nurse_main_wrapper.dart';
-import '../../features/guardian/guardian_main_wrapper.dart';
+import '../../features/admin/widgets/admin_main_wrapper.dart';
+import '../../features/nurse/widgets/nurse_main_wrapper.dart';
+import '../../features/guardian/widgets/guardian_main_wrapper.dart';
+import '../../features/admin/screens/admin_nurse_details_screen.dart';
+import '../../features/admin/screens/admin_elder_details_screen.dart';
+import '../../features/incident/screens/alert_history_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -25,43 +25,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
-      path: '/admin-login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/guardian-login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/nurse-login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/guardian-set-password',
-      name: 'guardian-set-password',
-      builder: (context, state) => const SetPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/admin-set-password',
-      name: 'admin-set-password',
-      builder: (context, state) => const AdminSetPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/nurse-set-password',
-      name: 'nurse-set-password',
-      builder: (context, state) => const NurseSetPasswordScreen(),
-    ),
-    GoRoute(
-      path: '/admin',
-      builder: (context, state) => const AdminMainWrapper(),
-    ),
-    GoRoute(
       path: '/admin-home',
       builder: (context, state) => const AdminMainWrapper(),
-    ),
-    GoRoute(
-      path: '/nurse',
-      builder: (context, state) => const NurseMainWrapper(),
     ),
     GoRoute(
       path: '/nurse-home',
@@ -70,6 +35,34 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/guardian-home',
       builder: (context, state) => const GuardianMainWrapper(),
+    ),
+    GoRoute(
+      path: '/admin-nurse-details',
+      builder: (context, state) {
+        final nurse = state.extra;
+        return AdminNurseDetailsScreen(nurse: nurse);
+      },
+    ),
+    GoRoute(
+      path: '/admin-elder-details',
+      builder: (context, state) {
+        final resident = state.extra;
+        return AdminElderDetailsScreen(resident: resident);
+      },
+    ),
+    GoRoute(
+      path: '/admin/alert-history',
+      builder: (context, state) {
+        final initialWeek = state.extra as String?;
+        return AlertHistoryScreen(initialWeekISO: initialWeek);
+      },
+    ),
+    GoRoute(
+      path: '/nurse/alert-history',
+      builder: (context, state) {
+        final initialWeek = state.extra as String?;
+        return AlertHistoryScreen(initialWeekISO: initialWeek);
+      },
     ),
   ],
 );
