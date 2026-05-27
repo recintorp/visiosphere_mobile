@@ -15,22 +15,19 @@ class CctvAnalyticsScreen extends StatefulWidget {
 }
 
 class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
-  late CctvProvider _cctvProvider;
-
   @override
   void initState() {
     super.initState();
-    _cctvProvider = context.read<CctvProvider>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _cctvProvider.initSocket();
-    });
+    // initSocket() is already called by AdminDashboardProvider.fetchDashboardData().
+    // The guard inside initSocket() (if _socket != null return) prevents duplicates.
+    // We do NOT call disposeSocket() on dispose — the socket lifecycle is owned by
+    // the app session, not by this screen. Disposing here was killing real-time
+    // alerts for the dashboard whenever the user navigated away from CCTV.
   }
 
-  @override
-  void dispose() {
-    _cctvProvider.disposeSocket();
-    super.dispose();
-  }
+  // dispose() intentionally does NOT call disposeSocket().
+  // The socket is managed at the CctvProvider level and stays alive for the
+  // entire logged-in session. It is disposed when CctvProvider itself is disposed.
 
   @override
   Widget build(BuildContext context) {
@@ -138,12 +135,12 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
   }
 
   Widget _buildStatPill(String label, String value, bool isAlert, bool isDark) {
-    final bgColor = isAlert 
-      ? (isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2)) 
-      : (isDark ? const Color(0xFF082F49).withValues(alpha: 0.3) : const Color(0xFFF0F9FF));
-    final fgColor = isAlert 
-      ? (isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48)) 
-      : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7));
+    final bgColor = isAlert
+        ? (isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2))
+        : (isDark ? const Color(0xFF082F49).withValues(alpha: 0.3) : const Color(0xFFF0F9FF));
+    final fgColor = isAlert
+        ? (isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48))
+        : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -462,9 +459,11 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.3) : const Color(0xFFF0F9FF),
               shape: BoxShape.circle,
-              border: Border.all(color: isDark ? const Color(0xFF0C4A6E).withValues(alpha: 0.5) : const Color(0xFFE0F2FE), width: 2),
+              border: Border.all(
+                  color: isDark ? const Color(0xFF0C4A6E).withValues(alpha: 0.5) : const Color(0xFFE0F2FE), width: 2),
             ),
-            child: Icon(Icons.verified_user_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), size: 32),
+            child: Icon(Icons.verified_user_rounded,
+                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7), size: 32),
           ),
           const SizedBox(height: 20),
           Text(

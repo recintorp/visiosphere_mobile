@@ -60,10 +60,7 @@ class AdminDashboardProvider extends ChangeNotifier {
   String?       get nurseRole        => _nurseRole;
   String?       get nurseProfilePic  => _nurseProfilePic;
 
-  void incrementAlertsToday() {
-    _alertsToday++;
-    notifyListeners();
-  }
+  void incrementAlertsToday() { _alertsToday++; notifyListeners(); }
 
   String _currentWeekStart() {
     final now    = DateTime.now();
@@ -76,13 +73,9 @@ class AdminDashboardProvider extends ChangeNotifier {
       final settings = await FirebaseMessaging.instance.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         final token = await FirebaseMessaging.instance.getToken();
-        if (token != null) {
-          await _notificationService.registerAdminFcmToken(customId, token);
-        }
+        if (token != null) await _notificationService.registerAdminFcmToken(customId, token);
       }
-    } catch (e) {
-      debugPrint('Error registering admin FCM token: $e');
-    }
+    } catch (e) { debugPrint('Error registering admin FCM token: $e'); }
   }
 
   Future<void> _registerNurseFcmToken(String nurseId) async {
@@ -90,17 +83,13 @@ class AdminDashboardProvider extends ChangeNotifier {
       final settings = await FirebaseMessaging.instance.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         final token = await FirebaseMessaging.instance.getToken();
-        if (token != null) {
-          await _notificationService.registerNurseFcmToken(nurseId, token);
-        }
+        if (token != null) await _notificationService.registerNurseFcmToken(nurseId, token);
       }
-    } catch (e) {
-      debugPrint('Error registering nurse FCM token: $e');
-    }
+    } catch (e) { debugPrint('Error registering nurse FCM token: $e'); }
   }
 
   Future<void> fetchDashboardData({
-    bool isNurseView    = false,
+    bool isNurseView = false,
     String? userId,
     String? userRole,
     CctvProvider? cctvProvider,
@@ -125,10 +114,8 @@ class AdminDashboardProvider extends ChangeNotifier {
       final futures = <Future>[
         _adminService.fetchDashboardStats(),
         _auditService.fetchAuditLogs(),
-        if (isLinkedNurse)
-          _adminService.fetchLinkedNurseProfile(userId),
-        if (isStandaloneNurse && userId != null)
-          _adminService.fetchStandaloneNurseProfile(userId),
+        if (isLinkedNurse)   _adminService.fetchLinkedNurseProfile(userId),
+        if (isStandaloneNurse && userId != null) _adminService.fetchStandaloneNurseProfile(userId),
       ];
 
       final results = await Future.wait(futures);
@@ -151,40 +138,30 @@ class AdminDashboardProvider extends ChangeNotifier {
       _nursesTrend = nursesData['trend'] as String?;
       _alertsTrend = alertsData['trend'] as String?;
 
-      final logsData    = results[1] as List<dynamic>;
-      _recentActivities = logsData.take(4).toList();
+      _recentActivities = (results[1] as List<dynamic>).take(4).toList();
 
       if (isLinkedNurse && results.length > 2) {
-        final nurseData  = results[2] as Map<String, dynamic>;
-        _nurseName       = '${nurseData['firstName']} ${nurseData['lastName']}';
-        _nurseId         = nurseData['nurseId'];
-        _nurseRole       = 'Nurse';
-        _nurseProfilePic = nurseData['profilePic'];
+        final nd = results[2] as Map<String, dynamic>;
+        _nurseName = '${nd['firstName']} ${nd['lastName']}';
+        _nurseId = nd['nurseId']; _nurseRole = 'Nurse'; _nurseProfilePic = nd['profilePic'];
         _registerNurseFcmToken(_nurseId!);
       }
 
       if (isStandaloneNurse && results.length > 2) {
-        final nurseData  = results[2] as Map<String, dynamic>;
-        _nurseName       = '${nurseData['firstName']} ${nurseData['lastName']}';
-        _nurseId         = nurseData['nurseId'];
-        _nurseRole       = 'Nurse';
-        _nurseProfilePic = nurseData['profilePic'];
+        final nd = results[2] as Map<String, dynamic>;
+        _nurseName = '${nd['firstName']} ${nd['lastName']}';
+        _nurseId = nd['nurseId']; _nurseRole = 'Nurse'; _nurseProfilePic = nd['profilePic'];
         _registerNurseFcmToken(_nurseId!);
       }
 
-      if (!isNurseView && userId != null) {
-        _registerAdminFcmToken(userId);
-      }
+      if (!isNurseView && userId != null) _registerAdminFcmToken(userId);
 
       _errorMessage = null;
     } catch (e) {
       debugPrint('Dashboard Error: $e');
-      _errorMessage     = 'Secure connection timeout. Verify network status.';
-      _totalElders      = 0;
-      _activeNurses     = 0;
-      _alertsToday      = 0;
-      _camerasOnline    = 0;
-      _recentActivities = [];
+      _errorMessage  = 'Secure connection timeout. Verify network status.';
+      _totalElders   = 0; _activeNurses = 0; _alertsToday = 0;
+      _camerasOnline = 0; _recentActivities = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -197,12 +174,10 @@ class AdminDashboardProvider extends ChangeNotifier {
     _weeklyLoading = true;
     _weeklyError   = null;
     notifyListeners();
-
     try {
-      final tz = DateTime.now().timeZoneName;
       _weeklyStats = await _incidentService.fetchWeeklyStats(
         weekStart: _currentWeekStart(),
-        tz:        tz,
+        tz: 'UTC',                          // ← fixed: was DateTime.now().timeZoneName
       );
       _weeklyError = null;
     } catch (e) {
@@ -215,17 +190,7 @@ class AdminDashboardProvider extends ChangeNotifier {
     }
   }
 
-  void retry({
-    bool isNurseView = false,
-    String? userId,
-    String? userRole,
-    CctvProvider? cctvProvider,
-  }) {
-    fetchDashboardData(
-      isNurseView:  isNurseView,
-      userId:       userId,
-      userRole:     userRole,
-      cctvProvider: cctvProvider,
-    );
+  void retry({bool isNurseView = false, String? userId, String? userRole, CctvProvider? cctvProvider}) {
+    fetchDashboardData(isNurseView: isNurseView, userId: userId, userRole: userRole, cctvProvider: cctvProvider);
   }
 }

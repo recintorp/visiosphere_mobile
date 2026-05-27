@@ -6,8 +6,22 @@ class IncidentApiService {
   final Dio _dio = DioClient.instance;
 
   Future<List<dynamic>> fetchIncidents() async {
-    final response = await _dio.get(ApiConstants.incidentBase);
-    return response.data as List<dynamic>;
+    final response = await _dio.get(
+      ApiConstants.incidentBase,
+      queryParameters: {
+        'since': DateTime.now()
+            .subtract(const Duration(days: 7))
+            .toUtc()
+            .toIso8601String(),
+        'limit': 100,
+      },
+    );
+    final data = response.data;
+    if (data is Map<String, dynamic> && data.containsKey('items')) {
+      return data['items'] as List<dynamic>;
+    }
+    if (data is List<dynamic>) return data;
+    return [];
   }
 
   Future<int> fetchUnreadCount() async {
@@ -32,14 +46,14 @@ class IncidentApiService {
   }
 
   Future<void> acknowledgeIncident(String id) async {
-    await _dio.put('${ApiConstants.incidentBase}/$id/acknowledge');
+    await _dio.patch('${ApiConstants.incidentBase}/$id/acknowledge');
   }
 
   Future<void> dismissIncident(String id) async {
-    await _dio.put('${ApiConstants.incidentBase}/$id/dismiss');
+    await _dio.patch('${ApiConstants.incidentBase}/$id/dismiss');
   }
 
   Future<void> resolveIncident(String id) async {
-    await _dio.put('${ApiConstants.incidentBase}/$id/resolve');
+    await _dio.patch('${ApiConstants.incidentBase}/$id/resolve');
   }
 }

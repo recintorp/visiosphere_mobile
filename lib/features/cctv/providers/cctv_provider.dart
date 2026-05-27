@@ -11,7 +11,6 @@ class CctvCamera {
   final String location;
   final String status;
   final String? url;
-
   CctvCamera({
     required this.cameraId,
     required this.name,
@@ -31,7 +30,6 @@ class CctvAlert {
   final String message;
   final String timestamp;
   String status;
-
   CctvAlert({
     required this.id,
     required this.rawType,
@@ -49,76 +47,81 @@ class CctvProvider extends ChangeNotifier {
   static const String _streamBaseUrl = 'http://10.0.2.2:5001';
 
   io.Socket? _socket;
+  bool _socketListenersAttached = false;
   final _incidentService = IncidentApiService();
 
   final AudioPlayer _emergencyPlayer = AudioPlayer();
-  final AudioPlayer _warningPlayer   = AudioPlayer();
+  final AudioPlayer _warningPlayer = AudioPlayer();
   AudioPlayer? _activePlayer;
   Timer? _cutoffTimer;
-  bool   _isPlaying = false;
-  double _volume    = 1.0;
+  bool _isPlaying = false;
+  double _volume = 1.0;
 
   final List<CctvCamera> _cameras = [
     CctvCamera(
       cameraId: 'CAM-001',
-      name:     'House of Charbel',
+      name: 'House of Charbel',
       location: 'Webcam · Cam 0',
-      status:   'Active',
-      url:      '$_streamBaseUrl/video_feed/House%20of%20Charbel',
+      status: 'Active',
+      url: '$_streamBaseUrl/video_feed/House%20of%20Charbel',
     ),
     CctvCamera(
       cameraId: 'CAM-002',
-      name:     'House of Gabriel',
+      name: 'House of Gabriel',
       location: 'IP Camera · Phone Stream',
-      status:   'Active',
-      url:      '$_streamBaseUrl/video_feed/House%20of%20Gabriel',
+      status: 'Active',
+      url: '$_streamBaseUrl/video_feed/House%20of%20Gabriel',
     ),
     CctvCamera(
       cameraId: 'CAM-003',
-      name:     'Future CCTV 1',
+      name: 'Future CCTV 1',
       location: 'Pending Installation',
-      status:   'Inactive',
+      status: 'Inactive',
     ),
     CctvCamera(
       cameraId: 'CAM-004',
-      name:     'Future CCTV 2',
+      name: 'Future CCTV 2',
       location: 'Pending Installation',
-      status:   'Inactive',
+      status: 'Inactive',
     ),
   ];
 
-  String             _selectedCameraId = 'OVERALL';
-  String             _filterModule     = 'All';
-  List<CctvAlert>    _alerts           = [];
+  String _selectedCameraId = 'OVERALL';
+  String _filterModule = 'All';
+  List<CctvAlert> _alerts = [];
   final Map<String, String> _realTimeStatuses = {};
-  CctvAlert?         _activeToast;
+  CctvAlert? _activeToast;
 
-  int                          _unreadCount  = 0;
-  List<Map<String, dynamic>>   _weeklyStats  = [];
-  bool                         _isLoading    = true;
-  String?                      _errorMessage;
+  int _unreadCount = 0;
+  List<Map<String, dynamic>> _weeklyStats = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  List<CctvCamera>           get cameras           => _cameras;
-  String                     get selectedCameraId  => _selectedCameraId;
-  String                     get filterModule      => _filterModule;
-  List<CctvAlert>            get alerts            => _alerts;
-  Map<String, String>        get realTimeStatuses  => _realTimeStatuses;
-  CctvAlert?                 get activeToast       => _activeToast;
-  int                        get unreadCount       => _unreadCount;
-  List<Map<String, dynamic>> get weeklyStats       => _weeklyStats;
-  bool                       get isLoading         => _isLoading;
-  String?                    get errorMessage      => _errorMessage;
-  bool                       get isPlaying         => _isPlaying;
-  double                     get volume            => _volume;
+  List<CctvCamera> get cameras => _cameras;
+  String get selectedCameraId => _selectedCameraId;
+  String get filterModule => _filterModule;
+  List<CctvAlert> get alerts => _alerts;
+  Map<String, String> get realTimeStatuses => _realTimeStatuses;
+  CctvAlert? get activeToast => _activeToast;
+  int get unreadCount => _unreadCount;
+  List<Map<String, dynamic>> get weeklyStats => _weeklyStats;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get isPlaying => _isPlaying;
+  double get volume => _volume;
 
   CctvCamera? get selectedCamera => _selectedCameraId == 'OVERALL'
       ? null
-      : _cameras.firstWhere((c) => c.cameraId == _selectedCameraId,
-            orElse: () => _cameras.first);
+      : _cameras.firstWhere(
+          (c) => c.cameraId == _selectedCameraId,
+          orElse: () => _cameras.first,
+        );
 
   List<CctvAlert> get filteredAlerts {
-    if (_filterModule == 'All')         return _alerts;
-    if (_filterModule == 'Unresolved')  return _alerts.where((a) => a.status == 'Unresolved').toList();
+    if (_filterModule == 'All') return _alerts;
+    if (_filterModule == 'Unresolved') {
+      return _alerts.where((a) => a.status == 'Unresolved').toList();
+    }
     return _alerts.where((a) => a.module == _filterModule).toList();
   }
 
@@ -147,7 +150,6 @@ class CctvProvider extends ChangeNotifier {
     _activePlayer!.resume();
     _isPlaying = true;
     notifyListeners();
-
     _cutoffTimer = Timer(const Duration(seconds: 5), () {
       _activePlayer?.pause();
       _activePlayer?.seek(Duration.zero);
@@ -157,13 +159,13 @@ class CctvProvider extends ChangeNotifier {
 
   void _clearAudioLock() {
     _activePlayer = null;
-    _isPlaying    = false;
+    _isPlaying = false;
     _cutoffTimer?.cancel();
     notifyListeners();
   }
 
   String _currentWeekStart() {
-    final now    = DateTime.now();
+    final now = DateTime.now();
     final sunday = now.subtract(Duration(days: now.weekday % 7));
     return '${sunday.year}-${sunday.month.toString().padLeft(2, '0')}-${sunday.day.toString().padLeft(2, '0')}';
   }
@@ -171,26 +173,22 @@ class CctvProvider extends ChangeNotifier {
   Future<void> fetchInitialData() async {
     _isLoading = true;
     notifyListeners();
-
     try {
       final results = await Future.wait([
         _incidentService.fetchIncidents(),
         _incidentService.fetchUnreadCount(),
         _incidentService.fetchWeeklyStats(
           weekStart: _currentWeekStart(),
-          tz:        DateTime.now().timeZoneName,
+          tz: 'UTC',
         ),
       ]);
-
       _alerts = (results[0] as List<dynamic>)
-          .map((data) => _parseServerIncident(data))
+          .map((d) => _parseServerIncident(d))
           .toList();
-
       _unreadCount = results[1] as int;
-
       _weeklyStats = List<Map<String, dynamic>>.from(
-          results[2] as List<dynamic>? ?? []);
-
+        results[2] as List<dynamic>? ?? [],
+      );
       _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Failed to load CCTV data: $e';
@@ -201,31 +199,41 @@ class CctvProvider extends ChangeNotifier {
   }
 
   void initSocket() {
-    if (_socket != null) return;
-
-    _socket = io.io(
+    _socket ??= io.io(
       ApiConstants.socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
+          .enableReconnection()
+          .setReconnectionAttempts(99999)
+          .setReconnectionDelay(2000)
           .build(),
     );
 
-    _socket?.onConnect((_) {
-      debugPrint('Connected to VisioSphere Event Socket');
-    });
+    if (!_socketListenersAttached) {
+      _socketListenersAttached = true;
+      _socket!.onConnect(
+        (_) => debugPrint('[Socket] Connected to VisioSphere Event Socket'),
+      );
+      _socket!.onDisconnect(
+        (_) => debugPrint('[Socket] Disconnected — will auto-reconnect'),
+      );
+      _socket!.onReconnect(
+        (_) => debugPrint('[Socket] Reconnected to VisioSphere Event Socket'),
+      );
+      _socket!.on(ApiConstants.socketEventAlert, (data) {
+        if (data != null) _handleIncomingAlert(data);
+      });
+    }
 
-    _socket?.on(ApiConstants.socketEventAlert, (data) {
-      if (data != null) _handleIncomingAlert(data);
-    });
-
-    _socket?.connect();
+    if (!(_socket!.connected)) _socket!.connect();
   }
 
   void disposeSocket() {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    _socketListenersAttached = false;
   }
 
   void setFilterModule(String module) {
@@ -244,12 +252,12 @@ class CctvProvider extends ChangeNotifier {
 
   void _handleIncomingAlert(dynamic data) {
     final location = data['location'] as String? ?? 'Unknown';
-    final message  = data['message'] ?? data['rawMessage'] ?? data['description'] ?? 'Alert';
-    final rawType  = data['type'] ?? data['severity'] ?? 'INFO';
+    final message = data['message'] ?? data['rawMessage'] ?? data['description'] ?? 'Alert';
+    final rawType = data['type'] ?? data['severity'] ?? 'INFO';
 
-    _realTimeStatuses[location] = message;
+    _realTimeStatuses[location] = message as String;
 
-    final newAlert      = _parseServerIncident(data);
+    final newAlert = _parseServerIncident(data);
     final existingIndex = _alerts.indexWhere((a) => a.id == newAlert.id);
 
     if (existingIndex >= 0) {
@@ -271,8 +279,8 @@ class CctvProvider extends ChangeNotifier {
   }
 
   CctvAlert _parseServerIncident(dynamic data) {
-    final message  = data['message'] ?? data['rawMessage'] ?? data['description'] ?? 'Alert';
-    final rawType  = data['type'] ??
+    final message = data['message'] ?? data['rawMessage'] ?? data['description'] ?? 'Alert';
+    final rawType = data['type'] ??
         (data['severity'] == 'Emergency'
             ? 'EMERGENCY'
             : data['severity'] == 'Warning'
@@ -280,29 +288,49 @@ class CctvProvider extends ChangeNotifier {
                 : 'INFO');
     final combined = '$message $rawType'.toUpperCase();
 
-    String module   = '?';
-    String label    = 'Alert';
-    String severity = 'Low';
+    String module = '?', label = 'Alert', severity = 'Low';
 
-    if      (combined.contains('FALL DETECTED'))                                          { module = 'Fall';       label = 'Fall Detected';    severity = 'High'; }
-    else if (combined.contains('PROLONGED FALL'))                                         { module = 'Fall';       label = 'Prolonged Fall';   severity = 'High'; }
-    else if (combined.contains('AGITATION_RISK') || combined.contains('AGITATION'))      { module = 'Agitation';  label = 'Agitation Risk';   severity = 'Medium'; }
-    else if (combined.contains('PACING'))                                                 { module = 'Pacing';     label = 'Pacing Detected';  severity = 'Medium'; }
-    else if (combined.contains('INACTIVE') || combined.contains('INACTIVITY'))           { module = 'Inactivity'; label = 'Inactivity';        severity = 'Medium'; }
-    else if (combined.contains('LYING DOWN'))                                             { module = 'Lying Down'; label = 'Lying Down';        severity = 'Low'; }
-    else if (combined.contains('STUMBLE'))                                                { module = 'Fall';       label = 'Stumble Detected'; severity = 'Low'; }
+    if (combined.contains('FALL DETECTED')) {
+      module = 'Fall';
+      label = 'Fall Detected';
+      severity = 'High';
+    } else if (combined.contains('PROLONGED FALL')) {
+      module = 'Fall';
+      label = 'Prolonged Fall';
+      severity = 'High';
+    } else if (combined.contains('AGITATION_RISK') || combined.contains('AGITATION')) {
+      module = 'Agitation';
+      label = 'Agitation Risk';
+      severity = 'Medium';
+    } else if (combined.contains('PACING')) {
+      module = 'Pacing';
+      label = 'Pacing Detected';
+      severity = 'Medium';
+    } else if (combined.contains('INACTIVE') || combined.contains('INACTIVITY')) {
+      module = 'Inactivity';
+      label = 'Inactivity';
+      severity = 'Medium';
+    } else if (combined.contains('LYING DOWN')) {
+      module = 'Lying Down';
+      label = 'Lying Down';
+      severity = 'Low';
+    } else if (combined.contains('STUMBLE')) {
+      module = 'Fall';
+      label = 'Stumble Detected';
+      severity = 'Low';
+    }
 
     return CctvAlert(
-      id:        data['_id'] ?? data['id'] ?? data['incidentId'] ?? 'local-${DateTime.now().millisecondsSinceEpoch}',
-      rawType:   rawType,
-      module:    module,
-      label:     label,
-      severity:  severity,
-      camera:    data['location'] ?? 'Unknown',
-      message:   message,
+      id: data['_id'] ?? data['id'] ?? data['incidentId'] ?? 'local-${DateTime.now().millisecondsSinceEpoch}',
+      rawType: rawType as String,
+      module: module,
+      label: label,
+      severity: severity,
+      camera: data['location'] ?? 'Unknown',
+      message: message as String,
       timestamp: data['timestamp'] ??
           (data['createdAt'] != null
-              ? _formatDate(data['createdAt'])
+              ? _formatDate(data['createdAt'] as String)
               : DateTime.now().toIso8601String()),
       status: data['acknowledged'] == true ? 'Resolved' : 'Unresolved',
     );
@@ -324,19 +352,19 @@ class CctvProvider extends ChangeNotifier {
       if (_unreadCount > 0) _unreadCount--;
       notifyListeners();
     }
-    if (!id.startsWith('local-')) {
-      await _incidentService.acknowledgeIncident(id);
-    }
+    if (!id.startsWith('local-')) await _incidentService.acknowledgeIncident(id);
   }
 
   Future<void> dismissAlert(String id, String? userId) async {
-    final alert = _alerts.firstWhere((a) => a.id == id, orElse: () => _alerts.first);
-    if (alert.status == 'Unresolved' && _unreadCount > 0) _unreadCount--;
+    final index = _alerts.indexWhere((a) => a.id == id);
+    if (index >= 0) {
+      if (_alerts[index].status == 'Unresolved' && _unreadCount > 0) {
+        _unreadCount--;
+      }
+    }
     _alerts.removeWhere((a) => a.id == id);
     notifyListeners();
-    if (!id.startsWith('local-')) {
-      await _incidentService.dismissIncident(id);
-    }
+    if (!id.startsWith('local-')) await _incidentService.dismissIncident(id);
   }
 
   void clearActiveToast() {

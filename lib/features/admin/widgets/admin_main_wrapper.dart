@@ -13,6 +13,7 @@ import '../providers/admin_settings_provider.dart';
 import '../../cctv/screens/cctv_analytics_screen.dart';
 import '../../cctv/providers/cctv_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/services/foreground_service.dart';
 
 class AdminMainWrapper extends StatefulWidget {
   const AdminMainWrapper({super.key});
@@ -28,33 +29,38 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
   @override
   void initState() {
     super.initState();
+    VisionSphereForegroundService.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initFcmForegroundListener();
     });
+  }
+
+  @override
+  void dispose() {
+    VisionSphereForegroundService.stop();
+    super.dispose();
   }
 
   void _initFcmForegroundListener() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (!mounted) return;
 
-      final data     = message.data;
-      final notif    = message.notification;
-      final cctv     = context.read<CctvProvider>();
+      final data = message.data;
 
       final payload = <String, dynamic>{
         '_id':          data['incidentId'] ?? 'fcm-${DateTime.now().millisecondsSinceEpoch}',
         'incidentType': data['incidentType'] ?? '',
-        'severity':     data['severity'] ?? 'Warning',
-        'location':     data['location'] ?? 'Unknown',
-        'description':  notif?.body ?? data['location'] ?? '',
-        'message':      notif?.body ?? data['location'] ?? '',
-        'rawMessage':   notif?.body ?? '',
+        'severity':     data['severity']     ?? 'Warning',
+        'location':     data['location']     ?? 'Unknown',
+        'description':  data['body']         ?? data['location'] ?? '',
+        'message':      data['body']         ?? data['location'] ?? '',
+        'rawMessage':   data['body']         ?? '',
         'type':         data['severity'] == 'Emergency' ? 'EMERGENCY' : 'WARNING',
         'timestamp':    DateTime.now().toIso8601String(),
         'acknowledged': false,
       };
 
-      cctv.handleFcmAlert(payload);
+      context.read<CctvProvider>().handleFcmAlert(payload);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -189,13 +195,15 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                       child: Row(
                         children: [
                           Icon(Icons.admin_panel_settings_rounded,
-                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA), size: 16),
+                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
+                              size: 16),
                           const SizedBox(width: 6),
                           Text('Admin',
                               style: TextStyle(
-                                  color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13)),
+                                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              )),
                         ],
                       ),
                     ),
@@ -204,7 +212,8 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         color: Colors.transparent,
-                        child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 18),
+                        child: const Icon(Icons.medical_services_rounded,
+                            color: Colors.white, size: 18),
                       ),
                     ),
                   ],
@@ -220,35 +229,15 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               children: [
-                _buildDrawerItem(
-                  Icons.space_dashboard_rounded,
-                  'Admin Hub',
-                  _currentIndex == 0,
-                  isDark,
-                  onTap: () => switchScreen(0),
-                ),
+                _buildDrawerItem(Icons.space_dashboard_rounded, 'Admin Hub',
+                    _currentIndex == 0, isDark, onTap: () => switchScreen(0)),
                 _buildExpandableAccountMenu(isDark),
-                _buildDrawerItem(
-                  Icons.videocam_rounded,
-                  'CCTV Live Hub',
-                  _currentIndex == 7,
-                  isDark,
-                  onTap: () => switchScreen(7),
-                ),
-                _buildDrawerItem(
-                  Icons.assignment_rounded,
-                  'Assessments & Reports',
-                  _currentIndex == 4,
-                  isDark,
-                  onTap: () => switchScreen(4),
-                ),
-                _buildDrawerItem(
-                  Icons.receipt_long_rounded,
-                  'Audit Trail & Logs',
-                  _currentIndex == 5,
-                  isDark,
-                  onTap: () => switchScreen(5),
-                ),
+                _buildDrawerItem(Icons.videocam_rounded, 'CCTV Live Hub',
+                    _currentIndex == 7, isDark, onTap: () => switchScreen(7)),
+                _buildDrawerItem(Icons.assignment_rounded, 'Assessments & Reports',
+                    _currentIndex == 4, isDark, onTap: () => switchScreen(4)),
+                _buildDrawerItem(Icons.receipt_long_rounded, 'Audit Trail & Logs',
+                    _currentIndex == 5, isDark, onTap: () => switchScreen(5)),
               ],
             ),
           ),
@@ -260,13 +249,8 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
             ),
             child: Column(
               children: [
-                _buildDrawerItem(
-                  Icons.settings_rounded,
-                  'System Settings',
-                  _currentIndex == 6,
-                  isDark,
-                  onTap: () => switchScreen(6),
-                ),
+                _buildDrawerItem(Icons.settings_rounded, 'System Settings',
+                    _currentIndex == 6, isDark, onTap: () => switchScreen(6)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                   child: SizedBox(
@@ -275,21 +259,21 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                       onPressed: () async {
                         final authProvider     = context.read<AuthProvider>();
                         final settingsProvider = context.read<AdminSettingsProvider>();
+                        await VisionSphereForegroundService.stop();
                         await settingsProvider.resetState();
                         await authProvider.logout();
                         if (!mounted) return;
                         context.go('/');
                       },
                       icon: Icon(Icons.logout_rounded,
-                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA), size: 20),
-                      label: Text(
-                        'Log Out',
-                        style: TextStyle(
                           color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                          size: 20),
+                      label: Text('Log Out',
+                          style: TextStyle(
+                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          )),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                         foregroundColor: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA),
@@ -308,7 +292,8 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, bool isSelected, bool isDark, {VoidCallback? onTap}) {
+  Widget _buildDrawerItem(IconData icon, String title, bool isSelected, bool isDark,
+      {VoidCallback? onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Material(
@@ -328,15 +313,13 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                 Icon(icon, color: Colors.white, size: 22),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                  child: Text(title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      )),
                 ),
               ],
             ),
@@ -354,14 +337,16 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isAnyChildSelected ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
+          color: isAnyChildSelected
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Theme(
           data: Theme.of(context).copyWith(
-            dividerColor:    Colors.transparent,
-            splashColor:     Colors.transparent,
-            highlightColor:  Colors.transparent,
+            dividerColor:   Colors.transparent,
+            splashColor:    Colors.transparent,
+            highlightColor: Colors.transparent,
           ),
           child: ExpansionTile(
             initiallyExpanded: isAnyChildSelected,
@@ -373,26 +358,27 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                 Icon(Icons.people_alt_rounded, color: Colors.white, size: 22),
                 SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    'Accounts',
-                    style: TextStyle(
-                      color:       Colors.white,
-                      fontSize:    14,
-                      fontWeight:  FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                  child: Text('Accounts',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      )),
                 ),
               ],
             ),
             childrenPadding: const EdgeInsets.only(bottom: 8.0),
             children: [
               _buildDrawerSubItem(Icons.medical_services_outlined, 'Nurses',
-                  isSelected: _currentIndex == 1, isDark: isDark, onTap: () => switchScreen(1)),
+                  isSelected: _currentIndex == 1, isDark: isDark,
+                  onTap: () => switchScreen(1)),
               _buildDrawerSubItem(Icons.elderly_rounded, 'Elders',
-                  isSelected: _currentIndex == 2, isDark: isDark, onTap: () => switchScreen(2)),
+                  isSelected: _currentIndex == 2, isDark: isDark,
+                  onTap: () => switchScreen(2)),
               _buildDrawerSubItem(Icons.family_restroom_rounded, 'Guardians',
-                  isSelected: _currentIndex == 3, isDark: isDark, onTap: () => switchScreen(3)),
+                  isSelected: _currentIndex == 3, isDark: isDark,
+                  onTap: () => switchScreen(3)),
             ],
           ),
         ),
@@ -427,16 +413,14 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                     size: 18),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected
-                          ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA))
-                          : Colors.white70,
-                      fontSize:   13,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
+                  child: Text(title,
+                      style: TextStyle(
+                        color: isSelected
+                            ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0FB2EA))
+                            : Colors.white70,
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      )),
                 ),
               ],
             ),
@@ -448,10 +432,10 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
 
   Widget _buildBackgroundLayer(Size size, bool isDark) {
     return AnimatedContainer(
-      duration:         const Duration(milliseconds: 400),
-      curve:            Curves.fastOutSlowIn,
-      width:            size.width,
-      height:           size.height,
+      duration:           const Duration(milliseconds: 400),
+      curve:              Curves.fastOutSlowIn,
+      width:              size.width,
+      height:             size.height,
       transformAlignment: Alignment.centerLeft,
       transform: Matrix4.translationValues(
         isMenuOpen ? size.width * 0.61 : 0.0,
@@ -475,10 +459,10 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
     return GestureDetector(
       onTap: isMenuOpen ? toggleMenu : null,
       child: AnimatedContainer(
-        duration:         const Duration(milliseconds: 400),
-        curve:            Curves.fastOutSlowIn,
-        width:            size.width,
-        height:           size.height,
+        duration:           const Duration(milliseconds: 400),
+        curve:              Curves.fastOutSlowIn,
+        width:              size.width,
+        height:             size.height,
         transformAlignment: Alignment.centerLeft,
         transform: Matrix4.translationValues(
           isMenuOpen ? size.width * 0.65 : 0.0,
@@ -495,12 +479,12 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           boxShadow: isMenuOpen
               ? [
                   BoxShadow(
-                    color:       isDark
+                    color: isDark
                         ? Colors.black.withValues(alpha: 0.5)
                         : const Color(0xFF001F2D).withValues(alpha: 0.15),
-                    blurRadius:  30,
+                    blurRadius:   30,
                     spreadRadius: 5,
-                    offset:      const Offset(-10, 10),
+                    offset:       const Offset(-10, 10),
                   ),
                 ]
               : [],
@@ -510,9 +494,9 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: AnimatedSwitcher(
-              duration:        const Duration(milliseconds: 400),
-              switchInCurve:   Curves.easeOutQuart,
-              switchOutCurve:  Curves.easeInQuart,
+              duration:       const Duration(milliseconds: 400),
+              switchInCurve:  Curves.easeOutQuart,
+              switchOutCurve: Curves.easeInQuart,
               transitionBuilder: (Widget child, Animation<double> animation) {
                 return FadeTransition(
                   opacity: animation,
