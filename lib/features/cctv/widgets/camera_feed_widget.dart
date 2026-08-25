@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:provider/provider.dart';
 import '../providers/cctv_provider.dart';
+import 'mjpeg_view.dart';
 
+/// Renders a live MJPEG feed using a Dio-based decoder (MjpegView).
 class CameraFeedWidget extends StatelessWidget {
   final CctvCamera camera;
 
@@ -10,6 +12,9 @@ class CameraFeedWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Watch the provider so the feed (re)builds when the token arrives/refreshes.
+    final provider = context.watch<CctvProvider>();
+    final feedUrl = provider.streamUrlFor(camera);
 
     return Container(
       width: double.infinity,
@@ -17,22 +22,21 @@ class CameraFeedWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF020617) : const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _buildFeedContent(isDark),
+          _buildFeedContent(isDark, feedUrl),
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             height: 80,
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearOverlayGradient(),
-              ),
+              decoration: const BoxDecoration(gradient: LinearOverlayGradient()),
             ),
           ),
         ],
@@ -40,17 +44,20 @@ class CameraFeedWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFeedContent(bool isDark) {
-    if (camera.status != 'Active' || camera.url == null) {
+  Widget _buildFeedContent(bool isDark, String? feedUrl) {
+    if (camera.status != 'Active' || camera.streamPath == null) {
       return _buildNoSignalView('NO SIGNAL', isDark);
     }
-
-    return Mjpeg(
-      isLive: true,
-      stream: camera.url!,
+    // Active but token/URL not ready yet.
+    if (feedUrl == null) {
+      return _buildLoadingView(isDark);
+    }
+    return MjpegView(
+      key: ValueKey(feedUrl),
+      url: feedUrl,
       fit: BoxFit.cover,
       loading: (context) => _buildLoadingView(isDark),
-      error: (context, error, stack) => _buildNoSignalView('CONNECTION LOST', isDark),
+      error: (context, error) => _buildNoSignalView('CONNECTION LOST', isDark),
     );
   }
 

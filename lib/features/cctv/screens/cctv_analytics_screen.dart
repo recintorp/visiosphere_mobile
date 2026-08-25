@@ -18,6 +18,11 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
   @override
   void initState() {
     super.initState();
+    // Ensure a valid signed stream token exists when the screen opens, even if
+    // fetchInitialData() was not the entry path (e.g. guardian view). Idempotent.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<CctvProvider>().ensureStreamToken();
+    });
     // initSocket() is already called by AdminDashboardProvider.fetchDashboardData().
     // The guard inside initSocket() (if _socket != null return) prevents duplicates.
     // We do NOT call disposeSocket() on dispose — the socket lifecycle is owned by

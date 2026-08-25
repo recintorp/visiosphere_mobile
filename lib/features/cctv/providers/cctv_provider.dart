@@ -4,19 +4,23 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../incident/services/incident_api_service.dart';
+import '../services/stream_api_service.dart';
 
 class CctvCamera {
   final String cameraId;
   final String name;
   final String location;
   final String status;
-  final String? url;
+  /// URL-encoded path segment on the AI core (e.g. 'House%20of%20Charbel').
+  /// Null for cameras with no live feed. The full URL (base + signed token) is
+  /// built on demand by CctvProvider.streamUrlFor().
+  final String? streamPath;
   CctvCamera({
     required this.cameraId,
     required this.name,
     required this.location,
     required this.status,
-    this.url,
+    this.streamPath,
   });
 }
 
@@ -44,11 +48,16 @@ class CctvAlert {
 }
 
 class CctvProvider extends ChangeNotifier {
-  static const String _streamBaseUrl = 'http://10.0.2.2:5001';
-
   io.Socket? _socket;
   bool _socketListenersAttached = false;
   final _incidentService = IncidentApiService();
+  final _streamService = StreamApiService();
+
+  // Signed stream token + resolved base, refreshed before expiry.
+  StreamToken? _streamToken;
+  String _streamBase = ApiConstants.streamBaseUrl;
+  Timer? _streamRefreshTimer;
+  bool _fetchingToken = false;
 
   final AudioPlayer _emergencyPlayer = AudioPlayer();
   final AudioPlayer _warningPlayer = AudioPlayer();
@@ -63,14 +72,14 @@ class CctvProvider extends ChangeNotifier {
       name: 'House of Charbel',
       location: 'Webcam · Cam 0',
       status: 'Active',
-      url: '$_streamBaseUrl/video_feed/House%20of%20Charbel',
+      streamPath: 'House%20of%20Charbel',
     ),
     CctvCamera(
       cameraId: 'CAM-002',
       name: 'House of Gabriel',
       location: 'IP Camera · Phone Stream',
       status: 'Active',
-      url: '$_streamBaseUrl/video_feed/House%20of%20Gabriel',
+      streamPath: 'House%20of%20Gabriel',
     ),
     CctvCamera(
       cameraId: 'CAM-003',
@@ -125,6 +134,58 @@ class CctvProvider extends ChangeNotifier {
     return _alerts.where((a) => a.module == _filterModule).toList();
   }
 
+  /// True once a valid stream token exists and feeds can be rendered.
+  bool get streamReady =>
+      _streamToken != null || ApiConstants.streamDebugKey.isNotEmpty;
+
+  /// Full MJPEG URL for a camera.
+  /// - Normal: appends the backend-minted ?token=.
+  /// - Debug (STREAM_DEBUG_KEY set): appends the AI core's legacy ?key= and
+  ///   skips the token requirement, to isolate token vs transport issues.
+  /// Returns null when the camera has no feed or no token is available yet.
+  String? streamUrlFor(CctvCamera camera) {
+    final path = camera.streamPath;
+    if (path == null) return null;
+    if (ApiConstants.streamDebugKey.isNotEmpty) {
+      return '$_streamBase/$path?key=${ApiConstants.streamDebugKey}';
+    }
+    if (_streamToken == null) return null;
+    return '$_streamBase/$path?token=${_streamToken!.token}';
+  }
+
+  /// Ensure a non-expired stream token exists. Fetches one if missing/expiring
+  /// and (re)arms a proactive refresh timer. Safe to call repeatedly.
+  Future<void> ensureStreamToken({bool force = false}) async {
+    if (_fetchingToken) return;
+    final current = _streamToken;
+    if (!force && current != null && !current.isExpiring) return;
+
+    _fetchingToken = true;
+    try {
+      final token = await _streamService.fetchStreamToken();
+      _streamToken = token;
+      if (token.streamBase != null && token.streamBase!.isNotEmpty) {
+        _streamBase = token.streamBase!.replaceAll(RegExp(r'/$'), '');
+      }
+      _scheduleStreamRefresh(token.expiresIn);
+      debugPrint('[Stream] token OK — base=$_streamBase, expiresIn=${token.expiresIn}s, token=${token.token}');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[Stream] Failed to fetch stream token: $e');
+    } finally {
+      _fetchingToken = false;
+    }
+  }
+
+  void _scheduleStreamRefresh(int expiresIn) {
+    _streamRefreshTimer?.cancel();
+    // Refresh ~30s before expiry so an active feed never drops on a stale token.
+    final lead = (expiresIn - 30).clamp(15, 86400);
+    _streamRefreshTimer = Timer(Duration(seconds: lead), () {
+      ensureStreamToken(force: true);
+    });
+  }
+
   CctvProvider() {
     _initAudio();
   }
@@ -173,6 +234,8 @@ class CctvProvider extends ChangeNotifier {
   Future<void> fetchInitialData() async {
     _isLoading = true;
     notifyListeners();
+    // Mint the stream token in parallel; feeds render as soon as it lands.
+    unawaited(ensureStreamToken());
     try {
       final results = await Future.wait([
         _incidentService.fetchIncidents(),
@@ -375,6 +438,7 @@ class CctvProvider extends ChangeNotifier {
   @override
   void dispose() {
     _cutoffTimer?.cancel();
+    _streamRefreshTimer?.cancel();
     _emergencyPlayer.dispose();
     _warningPlayer.dispose();
     disposeSocket();

@@ -1,0 +1,372 @@
+﻿visiosphere_mobile
+Γö£ΓöÇΓöÇ README.md
+Γö£ΓöÇΓöÇ analysis_options.yaml
+Γö£ΓöÇΓöÇ android
+Γöé   Γö£ΓöÇΓöÇ app
+Γöé   Γöé   Γö£ΓöÇΓöÇ build.gradle.kts
+Γöé   Γöé   ΓööΓöÇΓöÇ src
+Γöé   Γöé       Γö£ΓöÇΓöÇ debug
+Γöé   Γöé       Γöé   ΓööΓöÇΓöÇ AndroidManifest.xml
+Γöé   Γöé       Γö£ΓöÇΓöÇ main
+Γöé   Γöé       Γöé   Γö£ΓöÇΓöÇ AndroidManifest.xml
+Γöé   Γöé       Γöé   Γö£ΓöÇΓöÇ java
+Γöé   Γöé       Γöé   Γöé   ΓööΓöÇΓöÇ io
+Γöé   Γöé       Γöé   Γöé       ΓööΓöÇΓöÇ flutter
+Γöé   Γöé       Γöé   Γöé           ΓööΓöÇΓöÇ plugins
+Γöé   Γöé       Γöé   Γöé               ΓööΓöÇΓöÇ GeneratedPluginRegistrant.java
+Γöé   Γöé       Γöé   Γö£ΓöÇΓöÇ kotlin
+Γöé   Γöé       Γöé   Γöé   ΓööΓöÇΓöÇ com
+Γöé   Γöé       Γöé   Γöé       ΓööΓöÇΓöÇ example
+Γöé   Γöé       Γöé   Γöé           ΓööΓöÇΓöÇ visiosphere_mobile
+Γöé   Γöé       Γöé   Γöé               ΓööΓöÇΓöÇ MainActivity.kt
+Γöé   Γöé       Γöé   ΓööΓöÇΓöÇ res
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ drawable
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ launch_background.xml
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ drawable-v21
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ launch_background.xml
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ mipmap-hdpi
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ ic_launcher.png
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ mipmap-mdpi
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ ic_launcher.png
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ mipmap-xhdpi
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ ic_launcher.png
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ mipmap-xxhdpi
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ ic_launcher.png
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ mipmap-xxxhdpi
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ ic_launcher.png
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ values
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ styles.xml
+Γöé   Γöé       Γöé       Γö£ΓöÇΓöÇ values-night
+Γöé   Γöé       Γöé       Γöé   ΓööΓöÇΓöÇ styles.xml
+Γöé   Γöé       Γöé       ΓööΓöÇΓöÇ xml
+Γöé   Γöé       Γöé           ΓööΓöÇΓöÇ network_security_config.xml
+Γöé   Γöé       ΓööΓöÇΓöÇ profile
+Γöé   Γöé           ΓööΓöÇΓöÇ AndroidManifest.xml
+Γöé   Γö£ΓöÇΓöÇ build
+Γöé   Γöé   ΓööΓöÇΓöÇ reports
+Γöé   Γöé       ΓööΓöÇΓöÇ problems
+Γöé   Γöé           ΓööΓöÇΓöÇ problems-report.html
+Γöé   Γö£ΓöÇΓöÇ build.gradle.kts
+Γöé   Γö£ΓöÇΓöÇ gradle
+Γöé   Γöé   ΓööΓöÇΓöÇ wrapper
+Γöé   Γöé       Γö£ΓöÇΓöÇ gradle-wrapper.jar
+Γöé   Γöé       ΓööΓöÇΓöÇ gradle-wrapper.properties
+Γöé   Γö£ΓöÇΓöÇ gradle.properties
+Γöé   Γö£ΓöÇΓöÇ gradlew
+Γöé   Γö£ΓöÇΓöÇ gradlew.bat
+Γöé   Γö£ΓöÇΓöÇ key.properties
+Γöé   Γö£ΓöÇΓöÇ local.properties
+Γöé   ΓööΓöÇΓöÇ settings.gradle.kts
+Γö£ΓöÇΓöÇ assets
+Γöé   Γö£ΓöÇΓöÇ images
+Γöé   Γöé   Γö£ΓöÇΓöÇ logo.png
+Γöé   Γöé   Γö£ΓöÇΓöÇ logogo.png
+Γöé   Γöé   Γö£ΓöÇΓöÇ visio.png
+Γöé   Γöé   ΓööΓöÇΓöÇ visiologo.png
+Γöé   ΓööΓöÇΓöÇ sounds
+Γöé       Γö£ΓöÇΓöÇ emergency.mp3
+Γöé       ΓööΓöÇΓöÇ warning.mp3
+Γö£ΓöÇΓöÇ firebase.json
+Γö£ΓöÇΓöÇ flutter_tree.txt
+Γö£ΓöÇΓöÇ hs_err_pid10560.log
+Γö£ΓöÇΓöÇ hs_err_pid13348.log
+Γö£ΓöÇΓöÇ hs_err_pid26400.log
+Γö£ΓöÇΓöÇ hs_err_pid28448.log
+Γö£ΓöÇΓöÇ hs_err_pid3720.log
+Γö£ΓöÇΓöÇ ios
+Γöé   Γö£ΓöÇΓöÇ Flutter
+Γöé   Γöé   Γö£ΓöÇΓöÇ AppFrameworkInfo.plist
+Γöé   Γöé   Γö£ΓöÇΓöÇ Debug.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ Generated.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ Release.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ ephemeral
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ flutter_lldb_helper.py
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ flutter_lldbinit
+Γöé   Γöé   ΓööΓöÇΓöÇ flutter_export_environment.sh
+Γöé   Γö£ΓöÇΓöÇ Runner
+Γöé   Γöé   Γö£ΓöÇΓöÇ AppDelegate.swift
+Γöé   Γöé   Γö£ΓöÇΓöÇ Assets.xcassets
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ AppIcon.appiconset
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Contents.json
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-1024x1024@1x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-20x20@1x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-20x20@2x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-20x20@3x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-29x29@1x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-29x29@2x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-29x29@3x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-40x40@1x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-40x40@2x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-40x40@3x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-60x60@2x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-60x60@3x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-76x76@1x.png
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-App-76x76@2x.png
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ Icon-App-83.5x83.5@2x.png
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ LaunchImage.imageset
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ Contents.json
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ LaunchImage.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ LaunchImage@2x.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ LaunchImage@3x.png
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ README.md
+Γöé   Γöé   Γö£ΓöÇΓöÇ Base.lproj
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ LaunchScreen.storyboard
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ Main.storyboard
+Γöé   Γöé   Γö£ΓöÇΓöÇ GeneratedPluginRegistrant.h
+Γöé   Γöé   Γö£ΓöÇΓöÇ GeneratedPluginRegistrant.m
+Γöé   Γöé   Γö£ΓöÇΓöÇ Info.plist
+Γöé   Γöé   ΓööΓöÇΓöÇ Runner-Bridging-Header.h
+Γöé   Γö£ΓöÇΓöÇ Runner.xcodeproj
+Γöé   Γöé   Γö£ΓöÇΓöÇ project.pbxproj
+Γöé   Γöé   Γö£ΓöÇΓöÇ project.xcworkspace
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ contents.xcworkspacedata
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ IDEWorkspaceChecks.plist
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ WorkspaceSettings.xcsettings
+Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé       ΓööΓöÇΓöÇ xcschemes
+Γöé   Γöé           ΓööΓöÇΓöÇ Runner.xcscheme
+Γöé   Γö£ΓöÇΓöÇ Runner.xcworkspace
+Γöé   Γöé   Γö£ΓöÇΓöÇ contents.xcworkspacedata
+Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé       Γö£ΓöÇΓöÇ IDEWorkspaceChecks.plist
+Γöé   Γöé       ΓööΓöÇΓöÇ WorkspaceSettings.xcsettings
+Γöé   ΓööΓöÇΓöÇ RunnerTests
+Γöé       ΓööΓöÇΓöÇ RunnerTests.swift
+Γö£ΓöÇΓöÇ lib
+Γöé   Γö£ΓöÇΓöÇ core
+Γöé   Γöé   Γö£ΓöÇΓöÇ constants
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ api_constants.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ colors.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ network
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ dio_client.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ routes
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ app_router.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ services
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ foreground_service.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ secure_storage_service.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ theme
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ app_theme.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ theme_provider.dart
+Γöé   Γöé   ΓööΓöÇΓöÇ utils
+Γöé   Γöé       ΓööΓöÇΓöÇ validators.dart
+Γöé   Γö£ΓöÇΓöÇ features
+Γöé   Γöé   Γö£ΓöÇΓöÇ admin
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_assessments_provider.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_audit_provider.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_dashboard_provider.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_elders_provider.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_guardians_provider.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_nurses_provider.dart
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ admin_settings_provider.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ screens
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_assessments_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_audit_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_elder_details_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_elders_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_guardians_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_nurse_details_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_nurses_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ admin_settings_screen.dart
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ dashboard_screen.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ services
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ admin_api_service.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ widgets
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ admin_main_wrapper.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ archived_reports_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ assessment_block_editors.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ assessment_builder_sheet.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ assessment_history_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ assessment_readonly_blocks.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ assign_elders_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ audit_details_sheet.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ dashboard_chart_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ dashboard_header.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ dashboard_stat_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ dashboard_stats_row.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ delete_elder_dialog.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ delete_guardian_dialog.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ delete_nurse_dialog.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ edit_guardian_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ edit_nurse_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ elder_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ generate_report_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ nurse_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ provision_guardian_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ provision_nurse_modal.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ recent_weeks_strip.dart
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ week_sparkline.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ assessment
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ dummy
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ services
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ assessment_api_service.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ audit
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ dummy
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ services
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ audit_api_service.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ auth
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ auth_provider.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ screens
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ login_screen.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ widgets
+Γöé   Γöé   Γö£ΓöÇΓöÇ cctv
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ cctv_provider.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ screens
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ cctv_analytics_screen.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ widgets
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ alert_card.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ camera_feed_widget.dart
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ emergency_toast.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ guardian
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ guardian_provider.dart
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ guardian_settings_provider.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ screens
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ guardian_home_screen.dart
+Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ guardian_reports_screen.dart
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ guardian_settings_screen.dart
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ services
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ guardian_api_service.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ widgets
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ elder_carousel_widget.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ facility_overview_cards.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_account_details.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_calendar_widget.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_home_header.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_journal_widget.dart
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ guardian_main_wrapper.dart
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ notification_sheet.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ incident
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ dummy.txt
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ screens
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alert_history_screen.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ services
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ incident_api_service.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ notification
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ dummy
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ services
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ notification_api_service.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ nurse
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ services
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ nurse_api_service.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ widgets
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ nurse_main_wrapper.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ onboarding
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ onboarding_provider.dart
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ screens
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ onboarding_screen.dart
+Γöé   Γöé   Γö£ΓöÇΓöÇ residents
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ input
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ services
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ resident_api_service.dart
+Γöé   Γöé   ΓööΓöÇΓöÇ splash
+Γöé   Γöé       Γö£ΓöÇΓöÇ providers
+Γöé   Γöé       Γöé   ΓööΓöÇΓöÇ splash_provider.dart
+Γöé   Γöé       ΓööΓöÇΓöÇ screens
+Γöé   Γöé           ΓööΓöÇΓöÇ splash_screen.dart
+Γöé   Γö£ΓöÇΓöÇ firebase_options.dart
+Γöé   Γö£ΓöÇΓöÇ main.dart
+Γöé   Γö£ΓöÇΓöÇ providers
+Γöé   ΓööΓöÇΓöÇ shared
+Γö£ΓöÇΓöÇ linux
+Γöé   Γö£ΓöÇΓöÇ CMakeLists.txt
+Γöé   Γö£ΓöÇΓöÇ flutter
+Γöé   Γöé   Γö£ΓöÇΓöÇ CMakeLists.txt
+Γöé   Γöé   Γö£ΓöÇΓöÇ ephemeral
+Γöé   Γöé   Γö£ΓöÇΓöÇ generated_plugin_registrant.cc
+Γöé   Γöé   Γö£ΓöÇΓöÇ generated_plugin_registrant.h
+Γöé   Γöé   ΓööΓöÇΓöÇ generated_plugins.cmake
+Γöé   ΓööΓöÇΓöÇ runner
+Γöé       Γö£ΓöÇΓöÇ CMakeLists.txt
+Γöé       Γö£ΓöÇΓöÇ main.cc
+Γöé       Γö£ΓöÇΓöÇ my_application.cc
+Γöé       ΓööΓöÇΓöÇ my_application.h
+Γö£ΓöÇΓöÇ macos
+Γöé   Γö£ΓöÇΓöÇ Flutter
+Γöé   Γöé   Γö£ΓöÇΓöÇ Flutter-Debug.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ Flutter-Release.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ GeneratedPluginRegistrant.swift
+Γöé   Γöé   ΓööΓöÇΓöÇ ephemeral
+Γöé   Γöé       Γö£ΓöÇΓöÇ Flutter-Generated.xcconfig
+Γöé   Γöé       ΓööΓöÇΓöÇ flutter_export_environment.sh
+Γöé   Γö£ΓöÇΓöÇ Runner
+Γöé   Γöé   Γö£ΓöÇΓöÇ AppDelegate.swift
+Γöé   Γöé   Γö£ΓöÇΓöÇ Assets.xcassets
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ AppIcon.appiconset
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ Contents.json
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_1024.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_128.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_16.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_256.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_32.png
+Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ app_icon_512.png
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ app_icon_64.png
+Γöé   Γöé   Γö£ΓöÇΓöÇ Base.lproj
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ MainMenu.xib
+Γöé   Γöé   Γö£ΓöÇΓöÇ Configs
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ AppInfo.xcconfig
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Debug.xcconfig
+Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ Release.xcconfig
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ Warnings.xcconfig
+Γöé   Γöé   Γö£ΓöÇΓöÇ DebugProfile.entitlements
+Γöé   Γöé   Γö£ΓöÇΓöÇ Info.plist
+Γöé   Γöé   Γö£ΓöÇΓöÇ MainFlutterWindow.swift
+Γöé   Γöé   ΓööΓöÇΓöÇ Release.entitlements
+Γöé   Γö£ΓöÇΓöÇ Runner.xcodeproj
+Γöé   Γöé   Γö£ΓöÇΓöÇ project.pbxproj
+Γöé   Γöé   Γö£ΓöÇΓöÇ project.xcworkspace
+Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ IDEWorkspaceChecks.plist
+Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé       ΓööΓöÇΓöÇ xcschemes
+Γöé   Γöé           ΓööΓöÇΓöÇ Runner.xcscheme
+Γöé   Γö£ΓöÇΓöÇ Runner.xcworkspace
+Γöé   Γöé   Γö£ΓöÇΓöÇ contents.xcworkspacedata
+Γöé   Γöé   ΓööΓöÇΓöÇ xcshareddata
+Γöé   Γöé       ΓööΓöÇΓöÇ IDEWorkspaceChecks.plist
+Γöé   ΓööΓöÇΓöÇ RunnerTests
+Γöé       ΓööΓöÇΓöÇ RunnerTests.swift
+Γö£ΓöÇΓöÇ pubspec.yaml
+Γö£ΓöÇΓöÇ replay_pid13348.log
+Γö£ΓöÇΓöÇ replay_pid26400.log
+Γö£ΓöÇΓöÇ replay_pid28448.log
+Γö£ΓöÇΓöÇ replay_pid3720.log
+Γö£ΓöÇΓöÇ test
+Γöé   ΓööΓöÇΓöÇ widget_test.dart
+Γö£ΓöÇΓöÇ upload-keystore.jks
+Γö£ΓöÇΓöÇ web
+Γöé   Γö£ΓöÇΓöÇ favicon.png
+Γöé   Γö£ΓöÇΓöÇ icons
+Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-192.png
+Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-512.png
+Γöé   Γöé   Γö£ΓöÇΓöÇ Icon-maskable-192.png
+Γöé   Γöé   ΓööΓöÇΓöÇ Icon-maskable-512.png
+Γöé   Γö£ΓöÇΓöÇ index.html
+Γöé   ΓööΓöÇΓöÇ manifest.json
+ΓööΓöÇΓöÇ windows
+    Γö£ΓöÇΓöÇ CMakeLists.txt
+    Γö£ΓöÇΓöÇ flutter
+    Γöé   Γö£ΓöÇΓöÇ CMakeLists.txt
+    Γöé   Γö£ΓöÇΓöÇ ephemeral
+    Γöé   Γö£ΓöÇΓöÇ generated_plugin_registrant.cc
+    Γöé   Γö£ΓöÇΓöÇ generated_plugin_registrant.h
+    Γöé   ΓööΓöÇΓöÇ generated_plugins.cmake
+    ΓööΓöÇΓöÇ runner
+        Γö£ΓöÇΓöÇ CMakeLists.txt
+        Γö£ΓöÇΓöÇ Runner.rc
+        Γö£ΓöÇΓöÇ flutter_window.cpp
+        Γö£ΓöÇΓöÇ flutter_window.h
+        Γö£ΓöÇΓöÇ main.cpp
+        Γö£ΓöÇΓöÇ resource.h
+        Γö£ΓöÇΓöÇ resources
+        Γöé   ΓööΓöÇΓöÇ app_icon.ico
+        Γö£ΓöÇΓöÇ runner.exe.manifest
+        Γö£ΓöÇΓöÇ utils.cpp
+        Γö£ΓöÇΓöÇ utils.h
+        Γö£ΓöÇΓöÇ win32_window.cpp
+        ΓööΓöÇΓöÇ win32_window.h

@@ -9,6 +9,8 @@ class DioClient {
   static Dio? _instance;
   static VoidCallback? _onUnauthorized;
 
+  static bool get hasUnauthorizedCallback => _onUnauthorized != null;
+
   static Dio get instance {
     _instance ??= _createDio();
     return _instance!;
@@ -18,13 +20,17 @@ class DioClient {
     _onUnauthorized = callback;
   }
 
+  static void clearUnauthorizedCallback() {
+    _onUnauthorized = null;
+  }
+
   static Dio _createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl:        ApiConstants.baseUrl,
+        baseUrl: ApiConstants.baseUrl,
         connectTimeout: ApiConstants.connectTimeout,
         receiveTimeout: ApiConstants.receiveTimeout,
-        sendTimeout:    ApiConstants.sendTimeout,
+        sendTimeout: ApiConstants.sendTimeout,
         headers: {'Content-Type': 'application/json'},
       ),
     );
@@ -32,11 +38,13 @@ class DioClient {
     dio.interceptors.add(_AuthInterceptor());
 
     if (kDebugMode) {
-      dio.interceptors.add(LogInterceptor(
-        requestBody:  true,
-        responseBody: true,
-        logPrint: (o) => debugPrint(o.toString()),
-      ));
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          logPrint: (o) => debugPrint(o.toString()),
+        ),
+      );
     }
 
     return dio;
@@ -44,6 +52,7 @@ class DioClient {
 
   static void reset() {
     _instance = null;
+    clearUnauthorizedCallback();
   }
 }
 

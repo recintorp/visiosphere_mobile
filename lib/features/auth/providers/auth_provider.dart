@@ -17,15 +17,15 @@ class AuthProvider extends ChangeNotifier {
   bool _requires2FA = false;
   Map<String, dynamic>? _tempAuthData;
 
-  bool get isLoading           => _isLoading;
-  String? get errorMessage     => _errorMessage;
-  String? get token            => _token;
-  String? get userId           => _userId;
-  String? get userName         => _userName;
-  String? get userRole         => _userRole;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  String? get token => _token;
+  String? get userId => _userId;
+  String? get userName => _userName;
+  String? get userRole => _userRole;
   String? get profilePicBase64 => _profilePicBase64;
-  bool get isFirstLogin        => _isFirstLogin;
-  bool get requires2FA         => _requires2FA;
+  bool get isFirstLogin => _isFirstLogin;
+  bool get requires2FA => _requires2FA;
 
   void clearError() {
     _errorMessage = null;
@@ -37,11 +37,11 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final checkId    = loginId.trim();
-    final isNurse    = checkId.toUpperCase().startsWith('N-');
-    final isAdmin    = checkId.toUpperCase().startsWith('A-');
+    final checkId = loginId.trim();
+    final isNurse = checkId.toUpperCase().startsWith('N-');
+    final isAdmin = checkId.toUpperCase().startsWith('A-');
     final isGuardian = checkId.toUpperCase().startsWith('G-');
-    final isEmail    = checkId.contains('@');
+    final isEmail = checkId.contains('@');
 
     if (!isNurse && !isAdmin && !isGuardian && !isEmail) {
       _errorMessage = 'Invalid format or credentials provided.';
@@ -56,22 +56,22 @@ class AuthProvider extends ChangeNotifier {
 
       if (isNurse) {
         rolePath = 'nurses';
-        payload  = {'nurseId': checkId, 'password': password};
+        payload = {'nurseId': checkId, 'password': password};
       } else if (isGuardian) {
         rolePath = 'guardians';
-        payload  = {'guardianId': checkId, 'password': password};
+        payload = {'guardianId': checkId, 'password': password};
       }
 
       Response response = await _makeLoginRequest(rolePath, payload);
 
       if (isEmail && response.statusCode != 200) {
         rolePath = 'nurses';
-        payload  = {'nurseId': checkId, 'password': password};
+        payload = {'nurseId': checkId, 'password': password};
         response = await _makeLoginRequest(rolePath, payload);
 
         if (response.statusCode != 200) {
           rolePath = 'guardians';
-          payload  = {'guardianId': checkId, 'password': password};
+          payload = {'guardianId': checkId, 'password': password};
           response = await _makeLoginRequest(rolePath, payload);
         }
       }
@@ -89,18 +89,19 @@ class AuthProvider extends ChangeNotifier {
       final data = response.data as Map<String, dynamic>;
 
       if (data['isFirstLogin'] == true) {
-        _isFirstLogin  = true;
-        _tempAuthData  = data;
-        _errorMessage  = 'First-time login detected. Please use the Account Setup option.';
-        _isLoading     = false;
+        _isFirstLogin = true;
+        _tempAuthData = data;
+        _errorMessage =
+            'First-time login detected. Please use the Account Setup option.';
+        _isLoading = false;
         notifyListeners();
         return false;
       }
 
       if (data['requires2FA'] == true) {
-        _requires2FA  = true;
+        _requires2FA = true;
         _tempAuthData = data;
-        _isLoading    = false;
+        _isLoading = false;
         notifyListeners();
         return true;
       }
@@ -110,7 +111,9 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on DioException catch (e) {
-      _errorMessage = e.response?.data?['message'] ?? 'Account not found or invalid credentials.';
+      _errorMessage =
+          e.response?.data?['message'] ??
+          'Account not found or invalid credentials.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -140,35 +143,35 @@ class AuthProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> _saveAuthData(
-    Map<String, dynamic> data,
-    String rolePath,
-  ) async {
+  Future<void> _saveAuthData(Map<String, dynamic> data, String rolePath) async {
     final prefs = await SharedPreferences.getInstance();
 
     _token = data['token'] as String?;
 
     if (rolePath == 'admin') {
-      final admin       = data['admin'] ?? data['user'] ?? {};
-      _userId           = admin['customId'];
-      _userName         = admin['name'];
-      _userRole         = admin['role'] ?? 'Facility Admin';
+      final admin = data['admin'] ?? data['user'] ?? {};
+      _userId = admin['customId'];
+      _userName = admin['name'];
+      _userRole = admin['role'] ?? 'Facility Admin';
       _profilePicBase64 = admin['profilePic'];
     } else if (rolePath == 'nurses') {
-      final nurse       = data['nurse'] ?? data['user'] ?? {};
-      _userId           = nurse['nurseId'];
-      _userName         = '${nurse['firstName']} ${nurse['lastName']}';
-      _userRole         = 'Nurse';
+      final nurse = data['nurse'] ?? data['user'] ?? {};
+      _userId = nurse['nurseId'];
+      _userName = '${nurse['firstName']} ${nurse['lastName']}';
+      _userRole = 'Nurse';
       _profilePicBase64 = nurse['profilePic'];
     } else {
-      final guardian    = data['guardian'] ?? data['user'] ?? {};
-      _userId           = guardian['guardianId'];
-      _userName         = '${guardian['firstName']} ${guardian['lastName']}';
-      _userRole         = 'Guardian';
+      final guardian = data['guardian'] ?? data['user'] ?? {};
+      _userId = guardian['guardianId'];
+      _userName = '${guardian['firstName']} ${guardian['lastName']}';
+      _userRole = 'Guardian';
       _profilePicBase64 = guardian['profilePic'];
     }
 
-    if (_token == null || _token!.isEmpty || _userId == null || _userId!.isEmpty) {
+    if (_token == null ||
+        _token!.isEmpty ||
+        _userId == null ||
+        _userId!.isEmpty) {
       _token = null;
       _userId = null;
       _userName = null;
@@ -178,10 +181,10 @@ class AuthProvider extends ChangeNotifier {
     }
 
     await SecureStorageService.saveAuthData(
-      token:      _token!,
-      userId:     _userId!,
-      userRole:   _userRole ?? '',
-      userName:   _userName ?? '',
+      token: _token!,
+      userId: _userId!,
+      userRole: _userRole ?? '',
+      userName: _userName ?? '',
       profilePic: _profilePicBase64,
     );
 
@@ -195,7 +198,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final bool isNurse2FA = _tempAuthData?.containsKey('nurse') == true &&
+      final bool isNurse2FA =
+          _tempAuthData?.containsKey('nurse') == true &&
           !(_tempAuthData?.containsKey('admin') == true);
 
       late Response response;
@@ -345,9 +349,9 @@ class AuthProvider extends ChangeNotifier {
       final response = await DioClient.instance.post(
         path,
         data: {
-          'email':           email,
-          'otpCode':         otpCode,
-          'newPassword':     newPassword,
+          'email': email,
+          'otpCode': otpCode,
+          'newPassword': newPassword,
           'confirmPassword': confirmPassword,
         },
         options: Options(validateStatus: (s) => s != null && s < 500),
@@ -377,11 +381,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> loadSavedAuth() async {
-    final data        = await SecureStorageService.getAllAuthData();
-    _token            = data['token'];
-    _userId           = data['userId'];
-    _userRole         = data['userRole'];
-    _userName         = data['userName'];
+    final data = await SecureStorageService.getAllAuthData();
+    _token = data['token'];
+    _userId = data['userId'];
+    _userRole = data['userRole'];
+    _userName = data['userName'];
     _profilePicBase64 = data['profilePic'];
     notifyListeners();
   }
@@ -393,18 +397,15 @@ class AuthProvider extends ChangeNotifier {
     await prefs.clear();
 
     DioClient.reset();
-    DioClient.setUnauthorizedCallback(() {
-      throw UnimplementedError('Unauthorized callback not set after logout');
-    });
 
-    _token            = null;
-    _userId           = null;
-    _userName         = null;
-    _userRole         = null;
+    _token = null;
+    _userId = null;
+    _userName = null;
+    _userRole = null;
     _profilePicBase64 = null;
-    _isFirstLogin     = false;
-    _requires2FA      = false;
-    _tempAuthData     = null;
+    _isFirstLogin = false;
+    _requires2FA = false;
+    _tempAuthData = null;
 
     notifyListeners();
   }
