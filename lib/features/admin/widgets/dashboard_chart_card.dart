@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/constants/colors.dart';
 
-const _kCategories = ['Fall', 'Agitation', 'Pacing', 'Inactivity', 'Lying Down'];
+// 'Pacing' is deliberately absent: Module F was removed from ai_core and there
+// is no 'Pacing' value in the Incident enum, so the series was always zero.
+const _kCategories = ['Fall', 'Agitation', 'Inactivity', 'Lying Down'];
 
 const _kCategoryColors = {
   'Fall':        AppColors.chartFall,
   'Agitation':   AppColors.chartAgitation,
-  'Pacing':      AppColors.chartPacing,
   'Inactivity':  AppColors.chartInactivity,
   'Lying Down':  AppColors.chartLyingDown,
 };

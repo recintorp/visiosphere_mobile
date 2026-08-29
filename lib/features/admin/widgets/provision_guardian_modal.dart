@@ -18,6 +18,17 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
   String _selectedGender = '';
   bool _isSaving = false;
 
+  /// Validation and failure text, shown INSIDE this panel.
+  ///
+  /// Every message here used to be a SnackBar. A SnackBar is anchored to the
+  /// bottom of the screen — and this panel is a bottom sheet sitting on that
+  /// exact spot, so the message appeared behind it, nowhere near the field it
+  /// was about. That is "validation messages are displayed in the wrong
+  /// location... outside the panels instead of inside". The success message is
+  /// still a SnackBar, deliberately: by then the panel has closed, so the bottom
+  /// of the screen is free and is the right place for it.
+  String? _errorText;
+
   @override
   void dispose() {
     _firstNameCtrl.dispose();
@@ -28,20 +39,33 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
     super.dispose();
   }
 
+  void _fail(String message) => setState(() {
+        _errorText = message;
+        _isSaving  = false;
+      });
+
   void _handleSave() async {
-    if (_firstNameCtrl.text.trim().isEmpty || 
-        _lastNameCtrl.text.trim().isEmpty || 
+    setState(() => _errorText = null);
+
+    if (_firstNameCtrl.text.trim().isEmpty ||
+        _lastNameCtrl.text.trim().isEmpty ||
         _emailCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide all required fields (*).', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      _fail('Please provide all required fields (*).');
+      return;
+    }
+
+    // The backend takes the email on trust and MongoDB enforces only
+    // uniqueness, so a typo like "name@" was accepted here, rejected there, and
+    // came back as the same blanket "Failed to provision account." — with no
+    // hint that the email was the problem. Checked here, where the field is.
+    final email = _emailCtrl.text.trim();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _fail('Enter a valid email address, e.g. guardian@example.com.');
       return;
     }
 
     if (_phoneCtrl.text.isNotEmpty && (_phoneCtrl.text.length != 11 || !_phoneCtrl.text.startsWith('0'))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone number must be exactly 11 digits and start with 0.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      _fail('Phone number must be exactly 11 digits and start with 0.');
       return;
     }
 
@@ -55,24 +79,61 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
       'firstName': _firstNameCtrl.text.trim(),
       'middleName': _middleNameCtrl.text.trim(),
       'lastName': _lastNameCtrl.text.trim(),
-      'email': _emailCtrl.text.trim(),
+      'email': email,
       'phone': _phoneCtrl.text.trim(),
       'gender': _selectedGender,
     });
 
     if (!context.mounted) return;
-    setState(() => _isSaving = false);
 
     if (success) {
+      setState(() => _isSaving = false);
       navigator.pop();
       messenger.showSnackBar(
         const SnackBar(content: Text('Guardian account provisioned successfully!', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
       );
     } else {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Failed to provision account.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      // The provider now carries the backend's own explanation — a duplicate
+      // email, an expired session, a rejected field. Showing it beats the flat
+      // "Failed to provision account." that hid every one of those behind the
+      // same sentence.
+      _fail(provider.errorMessage ?? 'Failed to provision account.');
     }
+  }
+
+  /// Inline message block — sits between the last field and the buttons, so it
+  /// is the first thing under the user's thumb when a save is refused.
+  Widget _buildErrorBanner(bool isDark) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.35) : const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? const Color(0xFF881337) : const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded,
+              size: 18, color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorText!,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+                color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFieldLabel(String label, bool isDark) {
@@ -191,6 +252,7 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
                 ),
               ],
             ),
+            if (_errorText != null) _buildErrorBanner(isDark),
             const SizedBox(height: 32),
             Row(
               children: [

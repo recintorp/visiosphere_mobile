@@ -7,6 +7,7 @@ import '../widgets/provision_guardian_modal.dart';
 import '../widgets/edit_guardian_modal.dart';
 import '../widgets/assign_elders_modal.dart';
 import '../widgets/delete_guardian_dialog.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 
 class AdminGuardiansScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -491,27 +492,11 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen> {
             color: isDark ? Colors.white : null,
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications_none_rounded, size: 28, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF4757),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
+          // Was an IconButton with `onPressed: () {}` and a red dot that was
+          // painted whether or not anything was unread. See alerts_sheet.dart.
+          NotificationBellButton(
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            isDark: isDark,
           ),
         ],
       ),

@@ -9,6 +9,7 @@ import '../../admin/screens/admin_assessments_screen.dart';
 import '../../admin/screens/admin_settings_screen.dart';
 import '../../admin/providers/admin_settings_provider.dart';
 import '../../cctv/screens/cctv_analytics_screen.dart';
+import '../../video_clips/screens/video_clips_screen.dart';
 import '../../cctv/providers/cctv_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/services/foreground_service.dart';
@@ -101,6 +102,8 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
         return CctvAnalyticsScreen(key: const ValueKey(4), onMenuTap: toggleMenu);
       case 5:
         return AdminSettingsScreen(key: const ValueKey(5), onMenuTap: toggleMenu, isNurseView: true);
+      case 6:
+        return VideoClipsScreen(key: const ValueKey(6), onMenuTap: toggleMenu);
       default:
         return DashboardScreen(key: const ValueKey(0), onMenuTap: toggleMenu, isNurseView: true);
     }
@@ -240,6 +243,8 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
                     _currentIndex == 3, onTap: () => switchScreen(3)),
                 _buildDrawerItem(Icons.videocam_rounded, 'CCTV Live Hub',
                     _currentIndex == 4, onTap: () => switchScreen(4)),
+                _buildDrawerItem(Icons.video_library_rounded, 'Video Clips',
+                    _currentIndex == 6, onTap: () => switchScreen(6)), 
               ],
             ),
           ),

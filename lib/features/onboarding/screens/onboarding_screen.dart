@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/onboarding_provider.dart';
 import '../../../core/constants/colors.dart';
+import '../../../core/services/app_preferences.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -33,7 +34,7 @@ class OnboardingScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8, right: 16),
                       child: TextButton(
-                        onPressed: () => context.go('/login'),
+                        onPressed: () => _finishOnboarding(context),
                         child: const Text(
                           'Skip',
                           style: TextStyle(
@@ -98,7 +99,7 @@ class OnboardingScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           if (provider.currentPage == 2) {
-                            context.go('/login');
+                            _finishOnboarding(context);
                           } else {
                             provider.pageController.nextPage(
                               duration: const Duration(milliseconds: 400),
@@ -239,4 +240,14 @@ class OnboardingScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Leave the first-run tour for good.
+///
+/// Skipping counts as seeing it: someone who skipped does not want it again
+/// either. Splash reads this flag and goes straight to sign-in from here on.
+Future<void> _finishOnboarding(BuildContext context) async {
+  await AppPreferences.setSeenOnboarding();
+  if (!context.mounted) return;
+  context.go('/login');
 }

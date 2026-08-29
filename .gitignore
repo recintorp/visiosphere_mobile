@@ -35,3 +35,17 @@ ios/Runner/GoogleService-Info.plist
 # Env/secrets
 .env
 *.env
+
+# ── Signing secrets ──────────────────────────────────────────────────────────
+# The keystore lives in the REPO ROOT, which android/.gitignore does not reach —
+# its **/*.jks rule only applies inside android/. upload-keystore.jks was
+# committed as a result. Whoever holds it plus the password can sign an APK that
+# Android accepts as an update to this app, so it must never be tracked.
+*.jks
+*.keystore
+key.properties
+
+# ── JVM crash dumps ──────────────────────────────────────────────────────────
+# Gradle/Kotlin daemon crash output. Several megabytes of it were committed.
+hs_err_pid*.log
+replay_pid*.log

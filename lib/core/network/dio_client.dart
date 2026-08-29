@@ -56,6 +56,9 @@ class DioClient {
   }
 }
 
+/// Lowercase because Dio normalises response header names.
+const String _renewedTokenHeader = 'x-renewed-token';
+
 class _AuthInterceptor extends Interceptor {
   @override
   Future<void> onRequest(
@@ -67,6 +70,25 @@ class _AuthInterceptor extends Interceptor {
       options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
+  }
+
+  /// The backend slides a live session forward by returning a replacement token
+  /// on any authenticated request that is nearing its expiry (see
+  /// backend/config/session.js). Storing it here means a user who keeps using
+  /// the app is never signed out by a timer.
+  @override
+  void onResponse(
+    Response response,
+    ResponseInterceptorHandler handler,
+  ) {
+    final renewed = response.headers.value(_renewedTokenHeader);
+    if (renewed != null && renewed.isNotEmpty) {
+      // Deliberately not awaited: the write must never delay delivering the
+      // response the caller actually asked for. A dropped renewal costs a
+      // future sign-in, not this request.
+      SecureStorageService.updateToken(renewed);
+    }
+    handler.next(response);
   }
 
   @override

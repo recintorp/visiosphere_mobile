@@ -21,6 +21,10 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
   late String _selectedStatus;
   bool _isSaving = false;
 
+  /// Validation and failure text, shown INSIDE this panel rather than as a
+  /// SnackBar behind it. See the note in provision_guardian_modal.dart.
+  String? _errorText;
+
   @override
   void initState() {
     super.initState();
@@ -43,20 +47,29 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
     super.dispose();
   }
 
+  void _fail(String message) => setState(() {
+        _errorText = message;
+        _isSaving  = false;
+      });
+
   void _handleSave() async {
-    if (_firstNameCtrl.text.trim().isEmpty || 
-        _lastNameCtrl.text.trim().isEmpty || 
+    setState(() => _errorText = null);
+
+    if (_firstNameCtrl.text.trim().isEmpty ||
+        _lastNameCtrl.text.trim().isEmpty ||
         _emailCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide all required fields (*).', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      _fail('Please provide all required fields (*).');
+      return;
+    }
+
+    final email = _emailCtrl.text.trim();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _fail('Enter a valid email address, e.g. guardian@example.com.');
       return;
     }
 
     if (_phoneCtrl.text.isNotEmpty && (_phoneCtrl.text.length != 11 || !_phoneCtrl.text.startsWith('0'))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone number must be exactly 11 digits and start with 0.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      _fail('Phone number must be exactly 11 digits and start with 0.');
       return;
     }
 
@@ -73,7 +86,7 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
         'firstName': _firstNameCtrl.text.trim(),
         'middleName': _middleNameCtrl.text.trim(),
         'lastName': _lastNameCtrl.text.trim(),
-        'email': _emailCtrl.text.trim(),
+        'email': email,
         'phone': _phoneCtrl.text.trim(),
         'gender': _selectedGender,
         'status': _selectedStatus,
@@ -81,18 +94,50 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
     );
 
     if (!mounted) return;
-    setState(() => _isSaving = false);
 
     if (success) {
+      setState(() => _isSaving = false);
       navigator.pop();
       messenger.showSnackBar(
         const SnackBar(content: Text('Guardian account updated successfully!', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
       );
     } else {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Failed to update account.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      _fail(provider.errorMessage ?? 'Failed to update account.');
     }
+  }
+
+  /// Inline message block — see [_errorText] for why this is not a SnackBar.
+  Widget _buildErrorBanner(bool isDark) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.35) : const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? const Color(0xFF881337) : const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded,
+              size: 18, color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorText!,
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12.5,
+                height: 1.35,
+                fontWeight: FontWeight.w700,
+                color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFieldLabel(String label, bool isDark) {
@@ -246,7 +291,8 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
                 ),
               ),
             ),
-            
+
+            if (_errorText != null) _buildErrorBanner(isDark),
             const SizedBox(height: 32),
             Row(
               children: [

@@ -30,18 +30,30 @@ class GuardianApiService {
     await _dio.delete('${ApiConstants.guardianBase}/$guardianId');
   }
 
+  // THE ROUTE IS /guardians/link-elder, NOT /guardians/<id>/link-elder.
+  //
+  // These two called a path that does not exist on the backend. Express matches
+  // `PUT /guardians/:guardianId` against ONE segment, so `/guardians/G-2026
+  // 01/link-elder` fell through every route and came back 404 — which the
+  // provider caught, logged to debugPrint, and turned into "Failed to assign
+  // elder." Assigning a resident to a guardian has therefore never worked from
+  // the phone, and a guardian account with no resident linked to it is an
+  // account that does nothing.
+  //
+  // The real route (backend/routes/guardianRoutes.js) takes both ids in the
+  // BODY, which is also what the web client sends.
   Future<Map<String, dynamic>> linkElder(String guardianId, String residentId) async {
     final response = await _dio.put(
-      '${ApiConstants.guardianBase}/$guardianId/link-elder',
-      data: {'residentId': residentId},
+      '${ApiConstants.guardianBase}/link-elder',
+      data: {'guardianId': guardianId, 'residentId': residentId},
     );
     return response.data as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> unlinkElder(String guardianId, String residentId) async {
     final response = await _dio.put(
-      '${ApiConstants.guardianBase}/$guardianId/unlink-elder',
-      data: {'residentId': residentId},
+      '${ApiConstants.guardianBase}/unlink-elder',
+      data: {'guardianId': guardianId, 'residentId': residentId},
     );
     return response.data as Map<String, dynamic>;
   }

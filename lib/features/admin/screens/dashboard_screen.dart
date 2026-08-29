@@ -9,6 +9,7 @@ import '../widgets/dashboard_chart_card.dart';
 import '../widgets/recent_weeks_strip.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../cctv/providers/cctv_provider.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 import '../../../core/constants/colors.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -60,9 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   name:         displayName,
                   role:         widget.isNurseView ? 'Nurse' : (auth.userRole ?? 'Facility Admin'),
                   unreadCount:  cctv.unreadCount,
-                  cctvProvider: cctv,
                   onMenuTap:    widget.onMenuTap,
-                  onBellTap:    () => _showAlertsSheet(context),
+                  onBellTap:    () => showAlertsSheet(context),
                 ),
                 Expanded(
                   child: RefreshIndicator(
@@ -171,24 +171,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showAlertsSheet(BuildContext context) {
-    final isDark   = Theme.of(context).brightness == Brightness.dark;
-    // Capture the provider BEFORE entering the modal's detached context
-    final cctvProvider = context.read<CctvProvider>();
-
-    showModalBottomSheet(
-      context:            context,
-      backgroundColor:    Colors.transparent,
-      isScrollControlled: true,
-      // Re-inject the same CctvProvider instance so Consumer inside the
-      // sheet stays connected to the live provider even though the modal
-      // has its own detached BuildContext.
-      builder: (_) => ChangeNotifierProvider<CctvProvider>.value(
-        value: cctvProvider,
-        child: _AlertsSheet(isDark: isDark),
-      ),
-    );
-  }
+  // _showAlertsSheet and _AlertsSheet used to live here, private to this file.
+  // That is precisely why the bell worked on the dashboard and nowhere else:
+  // the other six modules drew the same bell with no panel to open. Both moved
+  // to features/cctv/widgets/alerts_sheet.dart so every module opens the same
+  // one — see showAlertsSheet() above.
 }
 
 class _LoadingState extends StatelessWidget {
@@ -271,160 +258,6 @@ class _ErrorBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AlertsSheet extends StatelessWidget {
-  final bool isDark;
-  const _AlertsSheet({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<CctvProvider>(
-      builder: (context, cctv, _) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.65,
-          decoration: BoxDecoration(
-            color:        isDark ? const Color(0xFF00212E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 14),
-                width: 34, height: 4,
-                decoration: BoxDecoration(
-                  color:        isDark ? const Color(0xFF00435C) : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'CCTV Alerts',
-                      style: TextStyle(
-                        fontSize:   16,
-                        fontWeight: FontWeight.w900,
-                        color: isDark ? Colors.white : const Color(0xFF00212E),
-                      ),
-                    ),
-                    if (cctv.unreadCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color:        const Color(0xFFF87171),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${cctv.unreadCount} Unread',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Divider(
-                color:  isDark ? const Color(0xFF00435C) : const Color(0xFFE4EDF2),
-                height: 1,
-              ),
-              Expanded(
-                child: cctv.alerts.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No recent alerts',
-                          style: TextStyle(
-                            color:      isDark ? AppColors.dashTextMuted : const Color(0xFF94A3B8),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: cctv.alerts.length,
-                        padding:   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        itemBuilder: (context, i) {
-                          final alert = cctv.alerts[i];
-                          return Container(
-                            margin:  const EdgeInsets.only(bottom: 9),
-                            padding: const EdgeInsets.all(11),
-                            decoration: BoxDecoration(
-                              color:        isDark ? const Color(0xFF001823) : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border(
-                                left: BorderSide(
-                                  color: alert.severity == 'High'
-                                      ? const Color(0xFFF87171)
-                                      : const Color(0xFFF59E0B),
-                                  width: 3,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(alert.label,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize:   12,
-                                          color: isDark ? Colors.white : const Color(0xFF00212E),
-                                        )),
-                                    Text(alert.timestamp,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: isDark ? AppColors.dashTextMuted : const Color(0xFF94A3B8),
-                                        )),
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                Text(alert.message,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                                    )),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(alert.camera,
-                                        style: const TextStyle(
-                                          fontSize:   10,
-                                          fontWeight: FontWeight.w700,
-                                          color:      Color(0xFF00A8E8),
-                                        )),
-                                    if (alert.status == 'Unresolved')
-                                      GestureDetector(
-                                        onTap: () {
-                                          cctv.acknowledgeAlert(
-                                              alert.id, context.read<AuthProvider>().userId);
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text(
-                                          'ACKNOWLEDGE',
-                                          style: TextStyle(
-                                            fontSize:   10,
-                                            fontWeight: FontWeight.w900,
-                                            color:      Color(0xFF22C55E),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

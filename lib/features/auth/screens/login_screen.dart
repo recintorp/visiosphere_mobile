@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +6,7 @@ import 'package:animate_do/animate_do.dart';
 import '../providers/auth_provider.dart';
 import '../../admin/providers/admin_settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/services/app_preferences.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -43,6 +45,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   late AnimationController _floatController;
   late bool _isDaytime;
 
+  // ── Sign-in throttling ────────────────────────────────────────────────────
+  // Repeated wrong passwords used to cost nothing but a snack bar, so the form
+  // could be hammered at typing speed. After AppPreferences.maxFailedLogins
+  // rejected attempts the button is disabled for AppPreferences
+  // .loginLockDuration and the panel says why.
+  //
+  // The count lives in SharedPreferences, not here, so force-quitting the app
+  // does not hand back a fresh five attempts — see AppPreferences for the
+  // reasoning and for what this is and is not.
+  Duration? _lockRemaining;
+  Timer? _lockTicker;
+
+  bool get _isLockedOut => _lockRemaining != null;
+
   @override
   void initState() {
     super.initState();
@@ -53,10 +69,55 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
+
+    _restoreRememberedId();
+    _restoreLockout();
+  }
+
+  /// Re-apply a lock that was still running when the app was last closed.
+  Future<void> _restoreLockout() async {
+    final remaining = await AppPreferences.loginLockRemaining();
+    if (!mounted || remaining == null) return;
+    _startLockCountdown(remaining);
+  }
+
+  /// Disable sign-in for [duration] and tick a live countdown while it runs.
+  void _startLockCountdown(Duration duration) {
+    _lockTicker?.cancel();
+    setState(() => _lockRemaining = duration);
+
+    _lockTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      final left = (_lockRemaining ?? Duration.zero) - const Duration(seconds: 1);
+      if (left <= Duration.zero) {
+        timer.cancel();
+        setState(() => _lockRemaining = null);
+      } else {
+        setState(() => _lockRemaining = left);
+      }
+    });
+  }
+
+  /// Pre-fill the sign-in id when "Remember me" was ticked last time.
+  ///
+  /// Only the ID is restored — never the password. Pre-filling a password would
+  /// put a working credential one tap from anyone holding the unlocked phone,
+  /// which is the wrong trade for a system carrying resident health records.
+  Future<void> _restoreRememberedId() async {
+    final remembered = await AppPreferences.rememberedLoginId();
+    if (!mounted) return;
+    setState(() {
+      _rememberMe = remembered != null;
+      if (remembered != null) _idController.text = remembered;
+    });
   }
 
   @override
   void dispose() {
+    _lockTicker?.cancel();
     _floatController.dispose();
     _idController.dispose();
     _passwordController.dispose();
@@ -107,6 +168,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final authProvider     = Provider.of<AuthProvider>(context, listen: false);
     final settingsProvider = Provider.of<AdminSettingsProvider>(context, listen: false);
 
+    if (_isLockedOut) return;
+
     if (_idController.text.isEmpty || _passwordController.text.isEmpty) {
       _showErrorSnackBar('Please enter your ID/Email and Password.');
       return;
@@ -116,6 +179,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (!mounted) return;
 
     if (success) {
+      // Clear the failure count as soon as the PASSWORD is accepted, even when
+      // 2FA still stands in the way — a correct password is never held against
+      // the user, and a fumbled PIN is a different problem from a guessed one.
+      await AppPreferences.clearLoginFailures();
+      if (!mounted) return;
+
+      // Remember the id for the same reason: it was correct either way, and a
+      // user who fails the PIN should not have to retype it.
+      await _persistSignInPreferences();
+      if (!mounted) return;
+
       if (authProvider.requires2FA) {
         _switchView('2fa');
       } else {
@@ -149,10 +223,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         });
       }
     } else {
+      // Only a rejection the SERVER actually returned counts against the
+      // attempt limit. A timeout or dead wifi must not lock a nurse out of the
+      // station — see AuthProvider.credentialsRejected.
+      if (authProvider.credentialsRejected) {
+        final lock = await AppPreferences.registerFailedLogin();
+        if (!mounted) return;
+        if (lock != null) {
+          _startLockCountdown(lock);
+          return;   // the panel now says why; a snack bar on top would be noise
+        }
+      }
+
       if (authProvider.errorMessage != null) {
         _showErrorSnackBar(authProvider.errorMessage!);
       }
     }
+  }
+
+  /// Save what a successful sign-in should be remembered by.
+  ///
+  /// Reaching this point also means the first-run tour is behind the user, so
+  /// it is marked seen here as well as in the tour itself — someone who was
+  /// sent straight to this screen never passed through it.
+  Future<void> _persistSignInPreferences() async {
+    await AppPreferences.setSeenOnboarding();
+    await AppPreferences.setRememberMe(_rememberMe, _idController.text);
   }
 
   Future<void> _handleVerify2FA() async {
@@ -656,6 +752,57 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
+  /// The message shown in place of an error when the form is locked.
+  ///
+  /// Deliberately inside the sign-in panel rather than a snack bar: a snack bar
+  /// slides away after four seconds, and the button stays disabled for a minute
+  /// — leaving the user staring at a dead button with no explanation on screen.
+  Widget _buildLockoutNotice() {
+    final left    = _lockRemaining ?? Duration.zero;
+    final seconds = left.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color:        const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(12),
+        border:       Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_clock_rounded, color: Color(0xFFE11D48), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Too many attempts. Try again in 1 minute.',
+                  style: TextStyle(
+                    color:      Color(0xFFE11D48),
+                    fontWeight: FontWeight.w800,
+                    fontSize:   13,
+                    height:     1.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Unlocks in ${left.inMinutes}:$seconds',
+                  style: const TextStyle(
+                    color:      Color(0xFF9F1239),
+                    fontWeight: FontWeight.w600,
+                    fontSize:   11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoginForm(bool isLoading) {
     return Column(
       key: const ValueKey('login_form'),
@@ -704,7 +851,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               height: 24, width: 24,
               child: Checkbox(
                 value: _rememberMe,
-                onChanged: isLoading ? null : (val) { setState(() { _rememberMe = val ?? false; }); },
+                onChanged: isLoading
+                    ? null
+                    : (val) {
+                        final remember = val ?? false;
+                        setState(() { _rememberMe = remember; });
+                        // Unticking forgets the stored id right away rather
+                        // than leaving it readable until the next sign-in.
+                        if (!remember) AppPreferences.setRememberMe(false, '');
+                      },
                 activeColor: const Color(0xFF00A8E8),
                 side: const BorderSide(color: Colors.blueGrey, width: 1.5),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -720,20 +875,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
           ],
         ),
+        if (_isLockedOut) ...[
+          const SizedBox(height: 20),
+          _buildLockoutNotice(),
+        ],
         const SizedBox(height: 32),
         SizedBox(
           width: double.infinity, height: 56,
           child: ElevatedButton(
-            onPressed: isLoading ? null : _handleLogin,
+            onPressed: (isLoading || _isLockedOut) ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0066CC),
+              disabledBackgroundColor: const Color(0xFFCBD5E1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 4,
               shadowColor: const Color(0xFF0066CC).withValues(alpha: 0.4),
             ),
             child: isLoading
                 ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                : Text(
+                    _isLockedOut ? 'Locked' : 'Sign In',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
+                  ),
           ),
         ),
         const SizedBox(height: 24),

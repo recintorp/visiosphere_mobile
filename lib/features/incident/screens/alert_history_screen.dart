@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../admin/widgets/week_sparkline.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const _kCategories = ['Fall', 'Agitation', 'Pacing', 'Inactivity', 'Lying Down'];
+// 'Pacing' is deliberately absent: Module F was removed from ai_core and there
+// is no 'Pacing' value in the Incident enum, so the series was always zero.
+const _kCategories = ['Fall', 'Agitation', 'Inactivity', 'Lying Down'];
 
 final _kCategoryColors = {
   'Fall':        AppColors.chartFall,
   'Agitation':   AppColors.chartAgitation,
-  'Pacing':      AppColors.chartPacing,
   'Inactivity':  AppColors.chartInactivity,
   'Lying Down':  AppColors.chartLyingDown,
 };
@@ -106,7 +108,11 @@ Color _severityBg(int total, bool isDark) {
 }
 
 Future<_WeekData> _fetchWeek(DateTime sunday) async {
-  final tz  = DateTime.now().timeZoneName;
+  // NOT DateTime.now().timeZoneName. That returns a platform abbreviation the
+  // backend's MongoDB $dateToString rejects, which threw on every one of the
+  // five week requests below and left this screen showing "no records" for data
+  // that was in the database the whole time. See ApiConstants.deviceTimeZone.
+  final tz  = ApiConstants.deviceTimeZone;
   final iso = _iso(sunday);
   final res = await DioClient.instance.get(
     '/incidents/stats/weekly',
@@ -157,6 +163,7 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
 
   List<_WeekData> _historyWeeks = [];
   bool _historyLoading = true;
+  bool _historyError   = false;
 
   _WeekData? _selectedWeek;
   bool _detailLoading = false;
@@ -185,7 +192,7 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    setState(() => _historyLoading = true);
+    setState(() { _historyLoading = true; _historyError = false; });
     try {
       final now     = DateTime.now();
       final thisSun = _sundayOfWeek(now);
@@ -195,11 +202,20 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
         )),
       );
       if (mounted) {
-        setState(() { _historyWeeks = weeks; _historyLoading = false; });
+        setState(() {
+          _historyWeeks   = weeks;
+          _historyLoading = false;
+          _historyError   = false;
+        });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AlertHistory] Weekly load failed: $e');
       if (mounted) {
-        setState(() { _historyWeeks = []; _historyLoading = false; });
+        setState(() {
+          _historyWeeks   = [];
+          _historyLoading = false;
+          _historyError   = true;
+        });
       }
     }
   }
@@ -465,6 +481,49 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 32),
           child: CircularProgressIndicator(color: Color(0xFF00A8E8), strokeWidth: 2.5),
+        ),
+      );
+    }
+    // A failed load and a genuinely quiet five weeks used to look identical —
+    // both rendered "No history available". That is how a broken request stayed
+    // hidden and got reported as "records are not showing". They are separate
+    // states now, with a retry on the one the user can do something about.
+    if (_historyError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            children: [
+              const Icon(Icons.cloud_off_rounded, color: Color(0xFFF87171), size: 28),
+              const SizedBox(height: 10),
+              Text(
+                'Could not load alert history',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize:   13,
+                  color: isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Check your connection and try again.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? AppColors.dashTextMuted : const Color(0xFF94A3B8),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loadHistory,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF00A8E8),
+                  side: const BorderSide(color: Color(0xFF00A8E8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Retry', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+              ),
+            ],
+          ),
         ),
       );
     }

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/admin_settings_provider.dart';
+import '../providers/admin_dashboard_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -26,6 +28,34 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _dataLoaded = false;
   String _selectedTheme = 'default';
 
+  // The three Change Password fields were hardcoded `obscureText: true` with a
+  // plain Icon(Icons.visibility_off) as the suffix — an icon, not a button, so
+  // there was nothing to press and nothing that could change if it were pressed.
+  // Confirm New Password had no icon at all. One flag each, so revealing the new
+  // password does not also reveal the current one.
+  bool _showOldPassword     = false;
+  bool _showNewPassword     = false;
+  bool _showConfirmPassword = false;
+
+  /// The eye button for a password field, sized and coloured to match the
+  /// original static icon so nothing about the form's look changes.
+  Widget _visibilityToggle({
+    required bool visible,
+    required VoidCallback onToggle,
+    required bool isDark,
+  }) {
+    return IconButton(
+      icon: Icon(
+        visible ? Icons.visibility : Icons.visibility_off,
+        color: isDark ? const Color(0xFF64748B) : Colors.blueGrey,
+        size: 18,
+      ),
+      splashRadius: 18,
+      onPressed: onToggle,
+      tooltip: visible ? 'Hide password' : 'Show password',
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +64,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         _loadData();
       }
     });
-  }
+  } 
 
   Future<void> _loadData() async {
     final provider = context.read<AdminSettingsProvider>();
@@ -308,7 +338,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             },
           ),
           Image.asset('assets/images/visio.png', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
-          Icon(Icons.notifications_none, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
+          // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
+          NotificationBellButton(
+            color: isDark ? Colors.white : const Color(0xFF00A8E8),
+            isDark: isDark,
+            size: 24,
+          ),
         ],
       ),
     );
@@ -463,10 +498,24 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final success = await provider.updateAdminProfile(_displayNameController.text, _selectedTheme);
+                    final newName = _displayNameController.text.trim();
+                    // Captured before the await: reading providers off `context`
+                    // after an async gap is unsafe.
+                    final auth      = context.read<AuthProvider>();
+                    final dashboard = context.read<AdminDashboardProvider>();
+
+                    final success = await provider.updateAdminProfile(newName, _selectedTheme);
                     if (!mounted) return;
                     if (success) {
                       context.read<ThemeProvider>().setTheme(_selectedTheme);
+
+                      // Saving used to stop at AdminSettingsProvider and the
+                      // server. The dashboard greeting reads AuthProvider (and,
+                      // for a nurse, AdminDashboardProvider.nurseName), so
+                      // neither of them heard about the change and the header
+                      // kept showing the old name until the next sign-in.
+                      await auth.updateDisplayName(newName);
+                      if (widget.isNurseView) dashboard.setNurseName(newName);
                     }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A8E8), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
@@ -488,41 +537,56 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               Text('CURRENT PASSWORD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
               const SizedBox(height: 8),
               TextField(
-                controller: _oldPasswordController, obscureText: true, 
+                controller: _oldPasswordController, obscureText: !_showOldPassword,
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true, fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))), 
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))), 
-                  suffixIcon: Icon(Icons.visibility_off, color: isDark ? const Color(0xFF64748B) : Colors.blueGrey, size: 18)
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                  suffixIcon: _visibilityToggle(
+                    visible: _showOldPassword,
+                    isDark: isDark,
+                    onToggle: () => setState(() => _showOldPassword = !_showOldPassword),
+                  )
                 )
               ),
               const SizedBox(height: 16),
               Text('NEW PASSWORD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
               const SizedBox(height: 8),
               TextField(
-                controller: _newPasswordController, obscureText: true, 
+                controller: _newPasswordController, obscureText: !_showNewPassword,
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true, fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))), 
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))), 
-                  suffixIcon: Icon(Icons.visibility_off, color: isDark ? const Color(0xFF64748B) : Colors.blueGrey, size: 18)
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                  suffixIcon: _visibilityToggle(
+                    visible: _showNewPassword,
+                    isDark: isDark,
+                    onToggle: () => setState(() => _showNewPassword = !_showNewPassword),
+                  )
                 )
               ),
               const SizedBox(height: 16),
               Text('CONFIRM NEW PASSWORD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
               const SizedBox(height: 8),
               TextField(
-                controller: _confirmPasswordController, obscureText: true, 
+                controller: _confirmPasswordController, obscureText: !_showConfirmPassword,
                 style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A)),
                 decoration: InputDecoration(
-                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+                  isDense: true, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   filled: true, fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)))
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                  // This field had no eye icon at all — added to match the two
+                  // above, with its own flag so it reveals only itself.
+                  suffixIcon: _visibilityToggle(
+                    visible: _showConfirmPassword,
+                    isDark: isDark,
+                    onToggle: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
+                  )
                 )
               ),
               const SizedBox(height: 20),

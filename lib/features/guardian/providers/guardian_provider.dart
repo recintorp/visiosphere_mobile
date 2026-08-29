@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -45,14 +46,39 @@ class GuardianProvider extends ChangeNotifier {
   }
 
   void _initSocket() {
+    unawaited(_ensureSocket());
+  }
+
+  Future<void> _ensureSocket() async {
     if (_socket != null && _socket!.connected) return;
+
+    final token = await SecureStorageService.getToken();
+
+    // The backend refuses unauthenticated sockets at the handshake
+    // (backend/config/socket.js `io.use`), so connecting without a token means
+    // no assessment comments or reactions ever arrive in realtime — silently.
+    if (token == null || token.isEmpty) {
+      debugPrint('[Socket] No auth token — not connecting.');
+      return;
+    }
+
+    // A socket left over from a previous session presents the previous
+    // token at handshake, which puts it in the wrong facility room.
+    _socket?.dispose();
 
     _socket = io.io(
       ApiConstants.socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
+          // Read by the backend as `socket.handshake.auth.token`. Without this
+          // the handshake is rejected with 'unauthorized'.
+          .setAuth({'token': token})
           .build(),
+    );
+
+    _socket!.onConnectError(
+      (e) => debugPrint('[Socket] Connect error (check auth token): $e'),
     );
 
     _socket!.connect();

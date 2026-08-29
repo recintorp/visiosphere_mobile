@@ -18,6 +18,7 @@ import 'features/admin/providers/admin_nurses_provider.dart';
 import 'features/admin/providers/admin_settings_provider.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/cctv/providers/cctv_provider.dart';
+import 'features/video_clips/providers/video_clips_provider.dart';
 import 'features/guardian/providers/guardian_provider.dart';
 import 'features/guardian/providers/guardian_settings_provider.dart';
 import 'features/onboarding/providers/onboarding_provider.dart';
@@ -144,6 +145,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AdminAuditProvider()),
         ChangeNotifierProvider(create: (_) => AdminSettingsProvider()),
         ChangeNotifierProvider(create: (_) => CctvProvider()),
+        ChangeNotifierProvider(create: (_) => VideoClipsProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

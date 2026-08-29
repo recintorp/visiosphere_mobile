@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import '../../../core/constants/facilities.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_elders_provider.dart';
 import '../widgets/delete_elder_dialog.dart';
 
@@ -18,18 +20,28 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
   final TextEditingController _notesController = TextEditingController();
   bool _isEditingNotes = false;
 
-  final List<String> _houses = [
-    'House of St. Charbel',
-    'House of St. Francis',
-    'House of St. Gabriel',
-    'House of St. Rose of Lima',
-    'House of St. Sebastian',
-    'Louis S. Coson Hall'
-  ];
+  /// Houses for the signed-in user's facility.
+  ///
+  /// A Grace's admin must never be offered a Saint Anthony house — the backend
+  /// would reject the write, but the UI should not offer it at all. Empty for
+  /// an unknown facility rather than falling back to every house.
+  ///
+  /// Snapshotted in initState rather than read on demand: some callers below
+  /// run after an await, where reading an inherited provider off `context` is
+  /// unsafe. The facility cannot change without a fresh sign-in, which rebuilds
+  /// this screen anyway.
+  late final List<String> _houses;
+
+  /// Whether to show any house UI. Grace's is split across six houses so the
+  /// field carries information; Saint Anthony is a single building, where a
+  /// House field repeats the one place everyone already is.
+  late final bool _showHouse;
 
   @override
   void initState() {
     super.initState();
+    _houses = Facilities.housesFor(context.read<AuthProvider>().facility);
+    _showHouse = _houses.length > 1;
     _currentResident = widget.resident;
     _notesController.text = _currentResident['notes'] ?? '';
   }
@@ -88,8 +100,11 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
     final middleNameCtrl = TextEditingController(text: _currentResident['middleName'] ?? '');
     final lastNameCtrl = TextEditingController(text: _currentResident['lastName'] ?? '');
 
-    String selectedHouse = _currentResident['house'] ?? _houses[0];
-    if (!_houses.contains(selectedHouse)) selectedHouse = _houses[0];
+    final houses = _houses;
+    String selectedHouse = _currentResident['house'] ?? '';
+    if (!houses.contains(selectedHouse)) {
+      selectedHouse = houses.isNotEmpty ? houses.first : '';
+    }
 
     showModalBottomSheet(
       context: context,
@@ -157,26 +172,33 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                       _buildFieldLabel('LAST NAME *', isDark),
                       _buildEntryField(lastNameCtrl, 'Enter last name', isDark),
                       const SizedBox(height: 16),
-                      _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            value: selectedHouse,
-                            icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
-                            style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
-                            items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
-                            onChanged: (val) => setModalState(() => selectedHouse = val!),
+                      // Grace's only — see Facilities.hasHouseChoice. The sole
+                      // house is still submitted below when hidden.
+                      if (_showHouse) ...[
+                        _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                            borderRadius: BorderRadius.circular(12),
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                              // null when the list is empty (unknown facility) —
+                              // a DropdownButton asserts if `value` is not in `items`.
+                              value: houses.contains(selectedHouse) ? selectedHouse : null,
+                              icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                              style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                              items: houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
+                              onChanged: (val) => setModalState(() => selectedHouse = val!),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                      ],
                       const SizedBox(height: 32),
                       Row(
                         children: [
@@ -479,38 +501,43 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FadeInUp(
-                      duration: const Duration(milliseconds: 300),
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
-                              child: Icon(Icons.home_work_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), size: 24),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('House Assignment', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                                  const SizedBox(height: 4),
-                                  Text(house, style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800)),
-                                ],
+                    // Grace's only. At a single-house facility this card would
+                    // state the one place every resident already is.
+                    if (_showHouse) ...[
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 300),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(12)),
+                                child: Icon(Icons.home_work_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), size: 24),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('House Assignment', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                                    const SizedBox(height: 4),
+                                    Text(house, style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
+
+                    ],
                     const SizedBox(height: 16),
 
                     FadeInUp(

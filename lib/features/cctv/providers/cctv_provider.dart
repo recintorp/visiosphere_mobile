@@ -3,26 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:audioplayers/audioplayers.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/facilities.dart';
+import '../../../core/services/secure_storage_service.dart';
 import '../../incident/services/incident_api_service.dart';
 import '../services/stream_api_service.dart';
 
-class CctvCamera {
-  final String cameraId;
-  final String name;
-  final String location;
-  final String status;
-  /// URL-encoded path segment on the AI core (e.g. 'House%20of%20Charbel').
-  /// Null for cameras with no live feed. The full URL (base + signed token) is
-  /// built on demand by CctvProvider.streamUrlFor().
-  final String? streamPath;
-  CctvCamera({
-    required this.cameraId,
-    required this.name,
-    required this.location,
-    required this.status,
-    this.streamPath,
-  });
-}
+// CctvCamera now lives with the rest of the tenancy data in
+// core/constants/facilities.dart, so the camera list can be scoped to the
+// signed-in user's facility. Re-exported here so the widgets and screens that
+// already import this provider keep working unchanged.
+export '../../../core/constants/facilities.dart' show CctvCamera;
 
 class CctvAlert {
   final String id;
@@ -49,6 +39,9 @@ class CctvAlert {
 
 class CctvProvider extends ChangeNotifier {
   io.Socket? _socket;
+  /// The auth token the live socket was built with, so an account switch is
+  /// detected and the socket rebuilt rather than silently reused.
+  String? _socketToken;
   bool _socketListenersAttached = false;
   final _incidentService = IncidentApiService();
   final _streamService = StreamApiService();
@@ -66,34 +59,12 @@ class CctvProvider extends ChangeNotifier {
   bool _isPlaying = false;
   double _volume = 1.0;
 
-  final List<CctvCamera> _cameras = [
-    CctvCamera(
-      cameraId: 'CAM-001',
-      name: 'House of Charbel',
-      location: 'Webcam · Cam 0',
-      status: 'Active',
-      streamPath: 'House%20of%20Charbel',
-    ),
-    CctvCamera(
-      cameraId: 'CAM-002',
-      name: 'House of Gabriel',
-      location: 'IP Camera · Phone Stream',
-      status: 'Active',
-      streamPath: 'House%20of%20Gabriel',
-    ),
-    CctvCamera(
-      cameraId: 'CAM-003',
-      name: 'Future CCTV 1',
-      location: 'Pending Installation',
-      status: 'Inactive',
-    ),
-    CctvCamera(
-      cameraId: 'CAM-004',
-      name: 'Future CCTV 2',
-      location: 'Pending Installation',
-      status: 'Inactive',
-    ),
-  ];
+  // Cameras the signed-in user may see, resolved from their facility at load
+  // time (see loadCameras). Empty until then, and empty for an unknown
+  // facility rather than falling back to every camera — an empty grid is an
+  // obvious bug report, whereas a silent fallback would show one facility's
+  // live video to the other.
+  List<CctvCamera> _cameras = const [];
 
   String _selectedCameraId = 'OVERALL';
   String _filterModule = 'All';
@@ -119,12 +90,13 @@ class CctvProvider extends ChangeNotifier {
   bool get isPlaying => _isPlaying;
   double get volume => _volume;
 
-  CctvCamera? get selectedCamera => _selectedCameraId == 'OVERALL'
-      ? null
-      : _cameras.firstWhere(
-          (c) => c.cameraId == _selectedCameraId,
-          orElse: () => _cameras.first,
-        );
+  CctvCamera? get selectedCamera {
+    if (_selectedCameraId == 'OVERALL' || _cameras.isEmpty) return null;
+    for (final c in _cameras) {
+      if (c.cameraId == _selectedCameraId) return c;
+    }
+    return _cameras.first;
+  }
 
   List<CctvAlert> get filteredAlerts {
     if (_filterModule == 'All') return _alerts;
@@ -231,18 +203,36 @@ class CctvProvider extends ChangeNotifier {
     return '${sunday.year}-${sunday.month.toString().padLeft(2, '0')}-${sunday.day.toString().padLeft(2, '0')}';
   }
 
+  /// Resolve the camera tiles for the signed-in user's facility.
+  ///
+  /// Cheap and idempotent, so it is simply re-run on every load rather than
+  /// cached — a user is not reassigned to a different facility mid-session
+  /// without a fresh login.
+  Future<void> loadCameras() async {
+    final facility = await SecureStorageService.getFacility();
+    _cameras = Facilities.camerasFor(facility);
+    if (_cameras.every((c) => c.cameraId != _selectedCameraId)) {
+      _selectedCameraId = 'OVERALL';
+    }
+    notifyListeners();
+  }
+
   Future<void> fetchInitialData() async {
     _isLoading = true;
     notifyListeners();
     // Mint the stream token in parallel; feeds render as soon as it lands.
     unawaited(ensureStreamToken());
+    await loadCameras();
     try {
       final results = await Future.wait([
         _incidentService.fetchIncidents(),
         _incidentService.fetchUnreadCount(),
         _incidentService.fetchWeeklyStats(
           weekStart: _currentWeekStart(),
-          tz: 'UTC',
+          // Kept in step with the dashboard chart and Alert History so the same
+          // week does not show three different totals. See
+          // ApiConstants.deviceTimeZone.
+          tz: ApiConstants.deviceTimeZone,
         ),
       ]);
       _alerts = (results[0] as List<dynamic>)
@@ -261,17 +251,48 @@ class CctvProvider extends ChangeNotifier {
     }
   }
 
+  /// Open the realtime alert socket.
+  ///
+  /// The token fetch is async, so the work happens in [_ensureSocket]; callers
+  /// keep the old fire-and-forget signature.
   void initSocket() {
-    _socket ??= io.io(
-      ApiConstants.socketUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .enableReconnection()
-          .setReconnectionAttempts(99999)
-          .setReconnectionDelay(2000)
-          .build(),
-    );
+    unawaited(_ensureSocket());
+  }
+
+  Future<void> _ensureSocket() async {
+    final token = await SecureStorageService.getToken();
+
+    // The backend refuses unauthenticated sockets at the handshake
+    // (backend/config/socket.js `io.use`), so connecting without a token is not
+    // a degraded connection — it is no connection at all, and every realtime
+    // alert is silently lost. Don't even try.
+    if (token == null || token.isEmpty) {
+      debugPrint('[Socket] No auth token — not connecting.');
+      return;
+    }
+
+    // Rebuild if the signed-in user changed. The backend joins a client to
+    // `facility:<X>` based on the token presented AT HANDSHAKE, so reusing a
+    // socket built with the previous session's token would keep delivering the
+    // previous facility's alerts after an account switch.
+    if (_socket != null && _socketToken != token) disposeSocket();
+
+    if (_socket == null) {
+      _socketToken = token;
+      _socket = io.io(
+        ApiConstants.socketUrl,
+        io.OptionBuilder()
+            .setTransports(['websocket'])
+            .disableAutoConnect()
+            .enableReconnection()
+            .setReconnectionAttempts(99999)
+            .setReconnectionDelay(2000)
+            // Read by the backend as `socket.handshake.auth.token`. Without
+            // this the handshake is rejected with 'unauthorized'.
+            .setAuth({'token': token})
+            .build(),
+      );
+    }
 
     if (!_socketListenersAttached) {
       _socketListenersAttached = true;
@@ -283,6 +304,11 @@ class CctvProvider extends ChangeNotifier {
       );
       _socket!.onReconnect(
         (_) => debugPrint('[Socket] Reconnected to VisioSphere Event Socket'),
+      );
+      // Most likely cause of a connect error is a missing or expired token,
+      // now that the backend rejects unauthenticated socket connections.
+      _socket!.onConnectError(
+        (e) => debugPrint('[Socket] Connect error (check auth token): $e'),
       );
       _socket!.on(ApiConstants.socketEventAlert, (data) {
         if (data != null) _handleIncomingAlert(data);
@@ -296,6 +322,7 @@ class CctvProvider extends ChangeNotifier {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    _socketToken = null;
     _socketListenersAttached = false;
   }
 
@@ -365,10 +392,6 @@ class CctvProvider extends ChangeNotifier {
       module = 'Agitation';
       label = 'Agitation Risk';
       severity = 'Medium';
-    } else if (combined.contains('PACING')) {
-      module = 'Pacing';
-      label = 'Pacing Detected';
-      severity = 'Medium';
     } else if (combined.contains('INACTIVE') || combined.contains('INACTIVITY')) {
       module = 'Inactivity';
       label = 'Inactivity';
@@ -428,6 +451,36 @@ class CctvProvider extends ChangeNotifier {
     _alerts.removeWhere((a) => a.id == id);
     notifyListeners();
     if (!id.startsWith('local-')) await _incidentService.dismissIncident(id);
+  }
+
+  /// Empty the notification panel ("Clear Notifications").
+  ///
+  /// Clears locally FIRST so the panel responds instantly, then dismisses each
+  /// alert on the server one at a time. The server-side dismiss is what makes it
+  /// stick: the backend filters both the incident list and the unread count on
+  /// `dismissed: { $ne: true }`, so a purely local clear would be undone by the
+  /// very next fetchInitialData().
+  ///
+  /// Sequential rather than Future.wait: the panel holds up to 100 alerts and
+  /// the backend's writeLimiter allows 120 writes a minute. Firing a hundred
+  /// PATCHes at once from a phone is a burst worth avoiding for work the user
+  /// has already been shown as done. A single failure is logged and skipped —
+  /// it costs one alert reappearing on the next refresh, not a broken button.
+  Future<void> clearNotifications() async {
+    final ids = _alerts.map((a) => a.id).toList();
+
+    _alerts = [];
+    _unreadCount = 0;
+    notifyListeners();
+
+    for (final id in ids) {
+      if (id.startsWith('local-')) continue;
+      try {
+        await _incidentService.dismissIncident(id);
+      } catch (e) {
+        debugPrint('[Alerts] Could not dismiss $id on the server: $e');
+      }
+    }
   }
 
   void clearActiveToast() {

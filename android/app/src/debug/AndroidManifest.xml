@@ -1,7 +1,20 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- The INTERNET permission is required for development. Specifically,
          the Flutter tool needs it to communicate with the running application
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Plain HTTP is allowed in DEBUG BUILDS ONLY.
+         android:usesCleartextTraffic="true" used to sit in the main manifest,
+         which permitted unencrypted traffic to any host in the shipped app and
+         quietly overrode the careful scoping in network_security_config.xml.
+         Production talks to HTTPS only (Render for the API, the Cloudflare
+         tunnel for the streams), so release does not need it at all — while
+         local dev against 10.0.2.2 or a LAN IP does.
+         tools:replace lets this override the merged value. -->
+    <application
+        android:usesCleartextTraffic="true"
+        tools:replace="android:usesCleartextTraffic" />
 </manifest>

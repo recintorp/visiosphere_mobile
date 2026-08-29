@@ -5,12 +5,14 @@ import 'package:animate_do/animate_do.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border;
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/facilities.dart';
 import '../providers/admin_elders_provider.dart';
 import '../providers/admin_dashboard_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/elder_card.dart';
 import '../widgets/generate_report_modal.dart';
 import '../widgets/archived_reports_modal.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 
 class AdminEldersScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -25,18 +27,28 @@ class AdminEldersScreen extends StatefulWidget {
 class _AdminEldersScreenState extends State<AdminEldersScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _houses = [
-    'House of St. Charbel',
-    'House of St. Francis',
-    'House of St. Gabriel',
-    'House of St. Rose of Lima',
-    'House of St. Sebastian',
-    'Louis S. Coson Hall'
-  ];
+  /// Houses for the signed-in user's facility.
+  ///
+  /// A Grace's admin must never be offered a Saint Anthony house — the backend
+  /// would reject the write, but the UI should not offer it at all. Empty for
+  /// an unknown facility rather than falling back to every house.
+  ///
+  /// Snapshotted in initState rather than read on demand: some callers below
+  /// run after an await, where reading an inherited provider off `context` is
+  /// unsafe. The facility cannot change without a fresh sign-in, which rebuilds
+  /// this screen anyway.
+  late final List<String> _houses;
+
+  /// Whether to show any house UI at all. Grace's is split across six houses so
+  /// the field carries information; Saint Anthony is a single building, where a
+  /// House column repeats one value and a House dropdown offers one option.
+  late final bool _showHouse;
 
   @override
   void initState() {
     super.initState();
+    _houses = Facilities.housesFor(context.read<AuthProvider>().facility);
+    _showHouse = _houses.length > 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final authProvider = context.read<AuthProvider>();
@@ -62,7 +74,7 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
     final firstNameCtrl = TextEditingController();
     final middleNameCtrl = TextEditingController();
     final lastNameCtrl = TextEditingController();
-    String selectedHouse = _houses[0];
+    String selectedHouse = _houses.isNotEmpty ? _houses.first : '';
 
     showModalBottomSheet(
       context: context,
@@ -104,26 +116,34 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
               _buildFieldLabel('LAST NAME *', isDark),
               _buildEntryField(lastNameCtrl, 'Enter last name', isDark),
               const SizedBox(height: 16),
-              _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
-                  borderRadius: BorderRadius.circular(12),
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: selectedHouse,
-                    dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
-                    style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
-                    items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
-                    onChanged: (val) => setModalState(() => selectedHouse = val!),
+              // Grace's only — see Facilities.hasHouseChoice. Saint Anthony is one
+              // building, so this would offer a single option and imply a choice
+              // that does not exist. The sole house is still submitted below.
+              if (_showHouse) ...[
+                _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                    borderRadius: BorderRadius.circular(12),
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      // null when the list is empty (unknown facility) — a
+                      // DropdownButton asserts if `value` is not among `items`.
+                      value: _houses.contains(selectedHouse) ? selectedHouse : null,
+                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                      style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                      items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
+                      onChanged: (val) => setModalState(() => selectedHouse = val!),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+              ],
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -227,7 +247,9 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
             }
 
             String houseAssigned = provider.selectedHouse;
-            if (houseAssigned == 'Overall Facility') houseAssigned = _houses[0];
+            if (houseAssigned == 'Overall Facility') {
+              houseAssigned = _houses.isNotEmpty ? _houses.first : '';
+            }
 
             importedResidents.add({
               'firstName': fName,
@@ -480,19 +502,24 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
-                      height: 40,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          _buildHousePill('Overall Facility', provider, isDark),
-                          ..._houses.map((h) => _buildHousePill(h, provider, isDark)),
-                        ],
+                    // Grace's only. With one house the strip would be
+                    // "Overall Facility" next to a single pill selecting the
+                    // same residents — two ways to say "all of them".
+                    if (_showHouse) ...[
+                      SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          children: [
+                            _buildHousePill('Overall Facility', provider, isDark),
+                            ..._houses.map((h) => _buildHousePill(h, provider, isDark)),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                    ],
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text('Status & Notes', style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
@@ -758,27 +785,11 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
             color: isDark ? Colors.white : null,
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications_none_rounded, size: 28, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF4757),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
+          // Was an IconButton with `onPressed: () {}` and a red dot that was
+          // painted whether or not anything was unread. See alerts_sheet.dart.
+          NotificationBellButton(
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            isDark: isDark,
           ),
         ],
       ),

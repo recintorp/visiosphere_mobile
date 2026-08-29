@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import '../../../core/constants/facilities.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_nurses_provider.dart';
 import '../widgets/delete_nurse_dialog.dart';
 
@@ -18,6 +20,15 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
   final TextEditingController _elderSearchCtrl = TextEditingController();
   List<dynamic> _availableElders = [];
   bool _isLoadingElders = false;
+
+  /// Whether to show any house UI. Grace's is split across six houses so the
+  /// field carries information; Saint Anthony is a single building, where a
+  /// House field repeats the one place everyone already is.
+  ///
+  /// A getter rather than a snapshot: the only caller runs straight from a tap,
+  /// with no await gap, so reading the provider off `context` is safe here.
+  bool get _showHouse =>
+      Facilities.hasHouseChoice(context.read<AuthProvider>().facility);
 
   @override
   void initState() {
@@ -169,20 +180,19 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
     final lastNameCtrl = TextEditingController(text: _currentNurse['lastName'] ?? '');
     final emailCtrl = TextEditingController(text: _currentNurse['email'] ?? '');
 
-    String selectedHouse = _currentNurse['houseAssigned'] ?? 'House of St. Charbel';
+    String selectedHouse = _currentNurse['houseAssigned'] ?? '';
     String selectedStatus = _currentNurse['status'] ?? 'Active';
 
-    final List<String> houses = [
-      'House of St. Charbel',
-      'House of St. Francis',
-      'House of St. Gabriel',
-      'House of St. Rose of Lima',
-      'House of St. Sebastian',
-      'Louis S. Coson Hall'
-    ];
+    // Houses for the signed-in user's facility. A Grace's admin must never be
+    // offered a Saint Anthony house — the backend would reject the write, but
+    // the UI should not offer it at all.
+    final List<String> houses =
+        Facilities.housesFor(context.read<AuthProvider>().facility);
     final List<String> statuses = ['Active', 'Inactive', 'On Leave'];
 
-    if (!houses.contains(selectedHouse)) selectedHouse = houses[0];
+    if (!houses.contains(selectedHouse)) {
+      selectedHouse = houses.isNotEmpty ? houses.first : '';
+    }
     if (!statuses.contains(selectedStatus)) selectedStatus = statuses[0];
 
     showModalBottomSheet(
@@ -254,26 +264,33 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                       _buildFieldLabel('EMAIL ADDRESS *', isDark),
                       _buildEntryField(emailCtrl, 'nurse@visiosphere.gov', isDark, keyboardType: TextInputType.emailAddress),
                       const SizedBox(height: 16),
-                      _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            value: selectedHouse,
-                            icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
-                            style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF00212E), fontWeight: FontWeight.w600),
-                            items: houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
-                            onChanged: (val) => setModalState(() => selectedHouse = val!),
+                      // Grace's only — see Facilities.hasHouseChoice. The sole
+                      // house is still submitted below when hidden.
+                      if (_showHouse) ...[
+                        _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                            borderRadius: BorderRadius.circular(12),
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                              // null when the list is empty (unknown facility) —
+                              // a DropdownButton asserts if `value` is not in `items`.
+                              value: houses.contains(selectedHouse) ? selectedHouse : null,
+                              icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                              style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF00212E), fontWeight: FontWeight.w600),
+                              items: houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
+                              onChanged: (val) => setModalState(() => selectedHouse = val!),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                      ],
                       const SizedBox(height: 16),
                       _buildFieldLabel('ACCOUNT STATUS *', isDark),
                       Container(

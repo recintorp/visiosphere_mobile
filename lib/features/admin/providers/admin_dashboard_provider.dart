@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../admin/services/admin_api_service.dart';
 import '../../audit/services/audit_api_service.dart';
 import '../../cctv/providers/cctv_provider.dart';
@@ -56,6 +57,20 @@ class AdminDashboardProvider extends ChangeNotifier {
   bool          get isLoading        => _isLoading;
   String?       get errorMessage     => _errorMessage;
   String?       get nurseName        => _nurseName;
+
+  /// Adopt a display name the nurse just saved in System Settings.
+  ///
+  /// The nurse dashboard greets with [nurseName] in preference to
+  /// AuthProvider.userName, so updating AuthProvider alone would still leave a
+  /// nurse looking at the old name. The server is the source of truth and
+  /// refetches on the next dashboard load — this only closes the gap in
+  /// between, which is exactly where the bug was visible.
+  void setNurseName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed == _nurseName) return;
+    _nurseName = trimmed;
+    notifyListeners();
+  }
   String?       get nurseId          => _nurseId;
   String?       get nurseRole        => _nurseRole;
   String?       get nurseProfilePic  => _nurseProfilePic;
@@ -177,7 +192,11 @@ class AdminDashboardProvider extends ChangeNotifier {
     try {
       _weeklyStats = await _incidentService.fetchWeeklyStats(
         weekStart: _currentWeekStart(),
-        tz: 'UTC',                          // ← fixed: was DateTime.now().timeZoneName
+        // Was DateTime.now().timeZoneName (invalid to Mongo, 500s), then 'UTC'
+        // (valid, but buckets by UTC days — so an 07:00 Manila alert counted on
+        // the previous day and this chart disagreed with the web dashboard by
+        // eight hours). The device offset is what the web already sends.
+        tz: ApiConstants.deviceTimeZone,
       );
       _weeklyError = null;
     } catch (e) {

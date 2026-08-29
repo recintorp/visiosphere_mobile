@@ -1,6 +1,28 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../nurse/services/nurse_api_service.dart';
 import '../../residents/services/resident_api_service.dart';
+
+/// Pull the backend's own explanation out of a failure.
+///
+/// provisionNurse() used to swallow the exception into a debugPrint and return
+/// a bare `false`, which the panel turned into "Failed to provision account" —
+/// the same sentence for a duplicate email, an expired session and a dead
+/// network. The backend sends a specific `message` for each; it was simply
+/// being discarded.
+String _failureMessage(Object error, String fallback) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    if (data is Map && data['message'] is String && (data['message'] as String).isNotEmpty) {
+      return data['message'] as String;
+    }
+    if (error.response == null) {
+      return 'Could not reach the server. Check your connection and try again.';
+    }
+    return '$fallback (HTTP ${error.response?.statusCode}).';
+  }
+  return fallback;
+}
 
 class AdminNursesProvider extends ChangeNotifier {
   final _nurseService = NurseApiService();
@@ -80,6 +102,7 @@ class AdminNursesProvider extends ChangeNotifier {
   }
 
   Future<bool> provisionNurse(Map<String, dynamic> nurseData) async {
+    _errorMessage = null;
     try {
       final result = await _nurseService.provisionNurse(nurseData);
       final newNurse = result['nurse'] ?? result;
@@ -88,6 +111,8 @@ class AdminNursesProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Provision Error: $e');
+      _errorMessage = _failureMessage(e, 'Failed to provision account.');
+      notifyListeners();
       return false;
     }
   }

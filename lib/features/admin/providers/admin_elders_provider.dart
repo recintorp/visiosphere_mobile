@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/facilities.dart';
+import '../../../core/services/secure_storage_service.dart';
 import '../../residents/services/resident_api_service.dart';
 import '../../nurse/services/nurse_api_service.dart';
 
@@ -13,19 +15,19 @@ class AdminEldersProvider extends ChangeNotifier {
   bool _isLoadingArchives = false;
   String? _errorMessage;
 
-  String _selectedHouse = 'House of St. Charbel';
+  // Starts unfiltered rather than on a named house: which houses exist depends
+  // on the signed-in user's facility, and Saint Anthony has no 'House of St.
+  // Charbel' to default to.
+  String _selectedHouse = Facilities.allHouses;
   String _searchTerm = '';
   String _filterAttendance = 'All';
   String _filterNotes = 'All';
 
-  final List<String> houses = [
-    'House of St. Charbel',
-    'House of St. Francis',
-    'House of St. Gabriel',
-    'House of St. Rose of Lima',
-    'House of St. Sebastian',
-    'Louis S. Coson Hall'
-  ];
+  /// Houses for the signed-in user's facility, resolved in [loadHouses].
+  /// Empty for an unknown facility rather than falling back to every house —
+  /// an empty list is an obvious bug report, whereas a silent fallback would
+  /// offer one facility's houses to the other.
+  List<String> houses = const [];
 
   List<dynamic> get residents => _residents;
   List<dynamic> get archivedReports => _archivedReports;
@@ -72,10 +74,22 @@ class AdminEldersProvider extends ChangeNotifier {
   int get notPresentCount => houseResidents.where((r) => r['attendance'] == 'Not Present' || r['attendance'] == null).length;
   int get withNotesCount => houseResidents.where((r) => (r['notes'] ?? '').toString().trim().isNotEmpty).length;
 
+  /// Resolve the house list for the signed-in user's facility. Cheap and
+  /// idempotent, so it is simply re-run on each load.
+  Future<void> loadHouses() async {
+    houses = Facilities.housesFor(await SecureStorageService.getFacility());
+    if (_selectedHouse != Facilities.allHouses && !houses.contains(_selectedHouse)) {
+      _selectedHouse = Facilities.allHouses;
+    }
+    notifyListeners();
+  }
+
   Future<void> fetchResidents({String? userRole, String? userId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+
+    await loadHouses();
 
     try {
       if (userRole == 'Nurse' && userId != null) {

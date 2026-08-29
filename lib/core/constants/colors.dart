@@ -47,7 +47,6 @@ class AppColors {
   // ── Chart category colors (matches web AlertsChartWidget) ────────────────
   static const Color chartFall       = Color(0xFFEF4444); // red
   static const Color chartAgitation  = Color(0xFFA855F7); // purple
-  static const Color chartPacing     = Color(0xFFF97316); // orange
   static const Color chartInactivity = Color(0xFFEAB308); // yellow
   static const Color chartLyingDown  = Color(0xFF64748B); // slate
 }

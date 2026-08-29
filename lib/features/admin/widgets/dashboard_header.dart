@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/colors.dart';
-import '../../cctv/providers/cctv_provider.dart';
 
 class DashboardHeader extends StatelessWidget {
   final String name;
@@ -8,14 +7,12 @@ class DashboardHeader extends StatelessWidget {
   final int unreadCount;
   final VoidCallback? onMenuTap;
   final VoidCallback? onBellTap;
-  final CctvProvider cctvProvider;
 
   const DashboardHeader({
     super.key,
     required this.name,
     required this.role,
     required this.unreadCount,
-    required this.cctvProvider,
     this.onMenuTap,
     this.onBellTap,
   });
@@ -135,68 +132,8 @@ class DashboardHeader extends StatelessWidget {
               ],
             ),
           ),
-          // Volume chip
-          _VolumeChip(cctvProvider: cctvProvider, isDark: isDark),
-          const SizedBox(width: 7),
           // Bell
           _BellButton(unreadCount: unreadCount, onTap: onBellTap, isDark: isDark),
-        ],
-      ),
-    );
-  }
-}
-
-class _VolumeChip extends StatelessWidget {
-  final CctvProvider cctvProvider;
-  final bool isDark;
-  const _VolumeChip({required this.cctvProvider, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color:        isDark ? AppColors.dashSurface : const Color(0xFFEEF7FC),
-        borderRadius: BorderRadius.circular(20),
-        border:       Border.all(
-          color: isDark ? AppColors.dashBorder : const Color(0xFFB8DFF0),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width:  22,
-            height: 22,
-            decoration: BoxDecoration(
-              color: cctvProvider.isPlaying
-                  ? const Color(0xFF00A8E8)
-                  : (isDark ? const Color(0xFF00435C) : const Color(0xFFB8DFF0)),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              cctvProvider.volume == 0
-                  ? Icons.volume_off_rounded
-                  : Icons.volume_up_rounded,
-              color: Colors.white,
-              size:  11,
-            ),
-          ),
-          const SizedBox(width: 3),
-          SizedBox(
-            width: 54,
-            child: SliderTheme(
-              data: SliderThemeData(
-                trackHeight:        2,
-                thumbShape:         const RoundSliderThumbShape(enabledThumbRadius: 4.5),
-                overlayShape:       const RoundSliderOverlayShape(overlayRadius: 7),
-                activeTrackColor:   const Color(0xFF00A8E8),
-                inactiveTrackColor: isDark ? AppColors.dashSurface : const Color(0xFFB8DFF0),
-                thumbColor:         const Color(0xFF00A8E8),
-              ),
-              child: Slider(value: cctvProvider.volume, onChanged: cctvProvider.setVolume),
-            ),
-          ),
         ],
       ),
     );

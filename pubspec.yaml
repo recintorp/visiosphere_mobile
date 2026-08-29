@@ -37,6 +37,9 @@ dependencies:
   path_provider: ^2.1.5
   url_launcher: ^6.3.2
   audioplayers: ^6.6.0
+  # Playback for the Video Clips archive. The clip URL is a short-lived signed
+  # link minted by the backend when a clip is opened.
+  video_player: ^2.9.2
   printing: ^5.14.3
   pdf: ^3.12.0
 
@@ -56,6 +59,23 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Generates every launcher density from one source image. Dev-only: it is a
+  # build-time generator, nothing it produces is linked into the app.
+  flutter_launcher_icons: ^0.14.3
+
+# Regenerate after changing the source image:
+#   flutter pub run flutter_launcher_icons
+# Sources are built from assets/images/logogo.png, padded onto a square canvas —
+# the raw logo is 914x811, and a non-square source gets squashed.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  # Adaptive icons are two layers the launcher crops to its own shape. The
+  # foreground carries extra margin because that crop is a circle on many
+  # launchers and corners get clipped.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 flutter:
   uses-material-design: true

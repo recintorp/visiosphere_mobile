@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/facilities.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/app_preferences.dart';
 import '../../../core/services/secure_storage_service.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -13,9 +15,20 @@ class AuthProvider extends ChangeNotifier {
   String? _userName;
   String? _userRole;
   String? _profilePicBase64;
+  String? _facility;
   bool _isFirstLogin = false;
   bool _requires2FA = false;
   Map<String, dynamic>? _tempAuthData;
+
+  /// True when the LAST login attempt was turned down by the server, as opposed
+  /// to never reaching it.
+  ///
+  /// login() returns false for a rejected password, a malformed id, a timeout
+  /// and a dead network alike, and the sign-in screen's attempt counter must
+  /// not treat them the same: locking someone out of a nurses' station for
+  /// having poor signal is worse than the guessing it was meant to stop. Only a
+  /// response that actually came back from the backend sets this.
+  bool _credentialsRejected = false;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -24,8 +37,12 @@ class AuthProvider extends ChangeNotifier {
   String? get userName => _userName;
   String? get userRole => _userRole;
   String? get profilePicBase64 => _profilePicBase64;
+  /// 'GRACES' | 'SAINT_ANTHONY' — read off the JWT's `facility` claim at
+  /// login. Drives which houses and cameras this user is offered.
+  String? get facility => _facility;
   bool get isFirstLogin => _isFirstLogin;
   bool get requires2FA => _requires2FA;
+  bool get credentialsRejected => _credentialsRejected;
 
   void clearError() {
     _errorMessage = null;
@@ -35,13 +52,20 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String loginId, String password) async {
     _isLoading = true;
     _errorMessage = null;
+    _credentialsRejected = false;
     notifyListeners();
 
     final checkId = loginId.trim();
-    final isNurse = checkId.toUpperCase().startsWith('N-');
-    final isAdmin = checkId.toUpperCase().startsWith('A-');
-    final isGuardian = checkId.toUpperCase().startsWith('G-');
-    final isEmail = checkId.contains('@');
+    // Role comes from the id PREFIX, and the prefix varies per facility:
+    // Grace's uses A-/N-/G-, Saint Anthony uses STA-/STN-/STG-. A hardcoded
+    // startsWith('A-') here is what rejected every Saint Anthony account with
+    // "Invalid format or credentials provided" before the request was even
+    // sent. Facilities.roleOf() reads the same prefix table the backend does.
+    final role = Facilities.roleOf(checkId);
+    final isNurse = role == 'nurse';
+    final isAdmin = role == 'admin';
+    final isGuardian = role == 'guardian';
+    final isEmail = Facilities.isEmail(checkId);
 
     if (!isNurse && !isAdmin && !isGuardian && !isEmail) {
       _errorMessage = 'Invalid format or credentials provided.';
@@ -81,6 +105,9 @@ class AuthProvider extends ChangeNotifier {
         _errorMessage = (msg is String && msg.isNotEmpty)
             ? msg
             : 'Invalid credentials. Please try again.';
+        // The backend answered and said no — this one counts against the
+        // attempt limit on the sign-in screen.
+        _credentialsRejected = true;
         _isLoading = false;
         notifyListeners();
         return false;
@@ -114,6 +141,9 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage =
           e.response?.data?['message'] ??
           'Account not found or invalid credentials.';
+      // A DioException with a response is a rejection; without one it is a
+      // timeout or a dead network, which must not cost the user an attempt.
+      _credentialsRejected = e.response != null;
       _isLoading = false;
       notifyListeners();
       return false;
@@ -177,8 +207,14 @@ class AuthProvider extends ChangeNotifier {
       _userName = null;
       _userRole = null;
       _profilePicBase64 = null;
+      _facility = null;
       throw Exception('Auth data incomplete — aborting save.');
     }
+
+    // The login RESPONSE body carries no facility; the TOKEN does. Fall back to
+    // the id prefix only if the claim is missing — a token minted before
+    // facility separation has none, and the backend 401s those anyway.
+    _facility = Facilities.facilityFromToken(_token) ?? Facilities.facilityOf(_userId);
 
     await SecureStorageService.saveAuthData(
       token: _token!,
@@ -186,6 +222,7 @@ class AuthProvider extends ChangeNotifier {
       userRole: _userRole ?? '',
       userName: _userName ?? '',
       profilePic: _profilePicBase64,
+      facility: _facility,
     );
 
     await prefs.setString('userRole', _userRole ?? '');
@@ -380,6 +417,31 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Adopt a new display name after it has been saved in System Settings.
+  ///
+  /// WHAT THIS FIXES
+  ///
+  /// The dashboard greeting reads `auth.userName`, which was only ever written
+  /// at sign-in. Saving a new Display Name updated AdminSettingsProvider and the
+  /// server, but nothing told AuthProvider — so the header kept greeting the old
+  /// name until the user signed out and back in. That is the whole of "Display
+  /// Name changes are not reflected on the Dashboard profile after saving".
+  ///
+  /// Writes through to secure storage as well as memory, so the new name also
+  /// survives a restart (loadSavedAuth reads from there, not from the server).
+  Future<void> updateDisplayName(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed == _userName) return;
+
+    _userName = trimmed;
+    await SecureStorageService.updateUserName(trimmed);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', trimmed);
+
+    notifyListeners();
+  }
+
   Future<void> loadSavedAuth() async {
     final data = await SecureStorageService.getAllAuthData();
     _token = data['token'];
@@ -387,6 +449,9 @@ class AuthProvider extends ChangeNotifier {
     _userRole = data['userRole'];
     _userName = data['userName'];
     _profilePicBase64 = data['profilePic'];
+    _facility = (data['facility']?.isNotEmpty ?? false)
+        ? data['facility']
+        : Facilities.facilityFromToken(_token) ?? Facilities.facilityOf(_userId);
     notifyListeners();
   }
 
@@ -394,7 +459,14 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
 
     await SecureStorageService.clearAuthData();
-    await prefs.clear();
+
+    // Clear by name rather than prefs.clear(). A blanket clear also wiped the
+    // first-run-tour flag and the remembered sign-in id, so every sign-out sent
+    // the user back through onboarding and forgot who they were.
+    for (final key in prefs.getKeys().toList()) {
+      if (AppPreferences.preserveAcrossLogout.contains(key)) continue;
+      await prefs.remove(key);
+    }
 
     DioClient.reset();
 
@@ -403,6 +475,7 @@ class AuthProvider extends ChangeNotifier {
     _userName = null;
     _userRole = null;
     _profilePicBase64 = null;
+    _facility = null;
     _isFirstLogin = false;
     _requires2FA = false;
     _tempAuthData = null;

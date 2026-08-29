@@ -30,6 +30,35 @@ class ApiConstants {
     defaultValue: '',
   );
 
+  /// The device's UTC offset as `+HH:MM`, for the `tz` query parameter on the
+  /// incident stats endpoints.
+  ///
+  /// WHY THIS EXISTS
+  ///
+  /// The backend feeds `tz` straight into MongoDB's `$dateToString`, which
+  /// accepts an Olson name ("Asia/Manila") or a UTC offset ("+08:00") and
+  /// REJECTS anything else — an unrecognised value makes the aggregation throw,
+  /// so the request 500s and the caller sees nothing at all.
+  ///
+  /// Dart cannot produce an Olson name. `DateTime.now().timeZoneName` returns a
+  /// platform abbreviation — "PST", "GMT+08:00", "Philippine Standard Time" —
+  /// and none of them are valid to Mongo. Sending it is what made Alert History
+  /// open to an empty list: all five week requests failed, the catch emptied the
+  /// list, and the screen reported "no records" for data that was there.
+  ///
+  /// The offset is the one form Dart can produce that Mongo accepts. For the
+  /// Philippines, which has no daylight saving, `+08:00` is exactly equivalent
+  /// to the `Asia/Manila` the web dashboard sends — so mobile and web now bucket
+  /// days identically instead of disagreeing by eight hours.
+  static String get deviceTimeZone {
+    final offset  = DateTime.now().timeZoneOffset;
+    final sign    = offset.isNegative ? '-' : '+';
+    final abs     = offset.abs();
+    final hours   = abs.inHours.toString().padLeft(2, '0');
+    final minutes = (abs.inMinutes % 60).toString().padLeft(2, '0');
+    return '$sign$hours:$minutes';
+  }
+
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);
   static const Duration sendTimeout    = Duration(seconds: 15);

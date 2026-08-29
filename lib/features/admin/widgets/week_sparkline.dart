@@ -4,11 +4,12 @@ import '../../../core/constants/colors.dart';
 
 // Mirrors _kCategories / _kCategoryColors from dashboard_chart_card.dart.
 // Import ChartDayData from dashboard_chart_card.dart at the call site.
-const _kSparkCategories = ['Fall', 'Agitation', 'Pacing', 'Inactivity', 'Lying Down'];
+// 'Pacing' is deliberately absent: Module F was removed from ai_core and there
+// is no 'Pacing' value in the Incident enum, so the series was always zero.
+const _kSparkCategories = ['Fall', 'Agitation', 'Inactivity', 'Lying Down'];
 const _kSparkColors = {
   'Fall':        AppColors.chartFall,
   'Agitation':   AppColors.chartAgitation,
-  'Pacing':      AppColors.chartPacing,
   'Inactivity':  AppColors.chartInactivity,
   'Lying Down':  AppColors.chartLyingDown,
 };

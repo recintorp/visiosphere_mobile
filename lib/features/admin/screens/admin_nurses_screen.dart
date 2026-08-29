@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/facilities.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_nurses_provider.dart';
 import '../widgets/nurse_card.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 
 class AdminNursesScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -17,18 +20,28 @@ class AdminNursesScreen extends StatefulWidget {
 class _AdminNursesScreenState extends State<AdminNursesScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _houses = [
-    'House of St. Charbel',
-    'House of St. Francis',
-    'House of St. Gabriel',
-    'House of St. Rose of Lima',
-    'House of St. Sebastian',
-    'Louis S. Coson Hall'
-  ];
+  /// Houses for the signed-in user's facility.
+  ///
+  /// A Grace's admin must never be offered a Saint Anthony house — the backend
+  /// would reject the write, but the UI should not offer it at all. Empty for
+  /// an unknown facility rather than falling back to every house.
+  ///
+  /// Snapshotted in initState rather than read on demand: some callers below
+  /// run after an await, where reading an inherited provider off `context` is
+  /// unsafe. The facility cannot change without a fresh sign-in, which rebuilds
+  /// this screen anyway.
+  late final List<String> _houses;
+
+  /// Whether to show any house UI at all. Grace's is split across six houses so
+  /// the field carries information; Saint Anthony is a single building, where a
+  /// House column repeats one value and a House dropdown offers one option.
+  late final bool _showHouse;
 
   @override
   void initState() {
     super.initState();
+    _houses = Facilities.housesFor(context.read<AuthProvider>().facility);
+    _showHouse = _houses.length > 1;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<AdminNursesProvider>().fetchNurses();
@@ -47,8 +60,20 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
     final middleNameCtrl = TextEditingController();
     final lastNameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
-    String selectedHouse = _houses[0];
-    
+    String selectedHouse = _houses.isNotEmpty ? _houses.first : '';
+
+    // Validation and failure text, shown INSIDE this panel.
+    //
+    // These were SnackBars. A SnackBar is anchored to the bottom of the screen
+    // and this panel is a bottom sheet sitting on that exact spot, so the
+    // message landed behind the panel — "displayed in the wrong location...
+    // outside the panels instead of inside". The success message stays a
+    // SnackBar on purpose: the panel has closed by then.
+    //
+    // There was also no client-side validation at all here: empty names went to
+    // the server and came back as a flat "Failed to provision account".
+    String? errorText;
+
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -67,7 +92,12 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
             left: 24,
             right: 24,
           ),
-          child: Column(
+          // Scrollable, matching the guardian panels. This Column was already
+          // tall enough to overflow on a small screen with the keyboard up, and
+          // the error banner below adds to it — an overflow stripe across a
+          // form is not something to ship.
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -108,37 +138,97 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
               _buildFieldLabel('FACILITY EMAIL *', isDark),
               _buildEntryField(emailCtrl, 'nurse@visiosphere.gov', isDark, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
-              _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
-                  borderRadius: BorderRadius.circular(12),
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: selectedHouse,
-                    dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
-                    style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF00212E), fontWeight: FontWeight.w600),
-                    items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
-                    onChanged: (val) => setModalState(() => selectedHouse = val!),
+              // Grace's only — see Facilities.hasHouseChoice. Saint Anthony is one
+              // building, so this would offer a single option and imply a choice
+              // that does not exist. The sole house is still submitted below.
+              if (_showHouse) ...[
+                _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                    borderRadius: BorderRadius.circular(12),
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedHouse,
+                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                      style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF00212E), fontWeight: FontWeight.w600),
+                      items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
+                      onChanged: (val) => setModalState(() => selectedHouse = val!),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+              ],
+              if (errorText != null)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.35) : const Color(0xFFFFF1F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: isDark ? const Color(0xFF881337) : const Color(0xFFFECACA)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.error_outline_rounded,
+                          size: 18, color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          errorText!,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 12.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () async {
-                    final success = await context.read<AdminNursesProvider>().provisionNurse({
-                      'firstName': firstNameCtrl.text,
-                      'middleName': middleNameCtrl.text,
-                      'lastName': lastNameCtrl.text,
-                      'email': emailCtrl.text,
+                    final firstName = firstNameCtrl.text.trim();
+                    final lastName  = lastNameCtrl.text.trim();
+                    final email     = emailCtrl.text.trim();
+
+                    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty) {
+                      setModalState(() => errorText = 'Please provide all required fields (*).');
+                      return;
+                    }
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+                      setModalState(() => errorText = 'Enter a valid email address, e.g. nurse@visiosphere.gov.');
+                      return;
+                    }
+                    if (_showHouse && selectedHouse.isEmpty) {
+                      setModalState(() => errorText = 'Select a house assignment.');
+                      return;
+                    }
+
+                    setModalState(() => errorText = null);
+
+                    // Captured before the await: reading a provider off
+                    // `context` after an async gap is unsafe.
+                    final nursesProvider = context.read<AdminNursesProvider>();
+
+                    final success = await nursesProvider.provisionNurse({
+                      'firstName': firstName,
+                      'middleName': middleNameCtrl.text.trim(),
+                      'lastName': lastName,
+                      'email': email,
                       'houseAssigned': selectedHouse,
                     });
                     if (!context.mounted) return;
@@ -148,9 +238,11 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
                         const SnackBar(content: Text('Account provisioned successfully', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to provision account', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-                      );
+                      // The provider now carries the backend's own explanation —
+                      // a duplicate email, an expired session — instead of the
+                      // one flat sentence that hid all of them.
+                      setModalState(() =>
+                          errorText = nursesProvider.errorMessage ?? 'Failed to provision account.');
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -165,6 +257,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -546,27 +639,11 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications_none_rounded, size: 28, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF4757),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
+          // Was an IconButton with `onPressed: () {}` and a red dot that was
+          // painted whether or not anything was unread. See alerts_sheet.dart.
+          NotificationBellButton(
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
+            isDark: isDark,
           ),
         ],
       ),

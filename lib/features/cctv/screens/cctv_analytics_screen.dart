@@ -21,10 +21,16 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
     // Ensure a valid signed stream token exists when the screen opens, even if
     // fetchInitialData() was not the entry path (e.g. guardian view). Idempotent.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<CctvProvider>().ensureStreamToken();
+      if (!mounted) return;
+      final cctv = context.read<CctvProvider>();
+      cctv.ensureStreamToken();
+      // Same reasoning for the camera tiles: they are scoped to the signed-in
+      // user's facility and would otherwise be empty on this entry path.
+      cctv.loadCameras();
     });
     // initSocket() is already called by AdminDashboardProvider.fetchDashboardData().
-    // The guard inside initSocket() (if _socket != null return) prevents duplicates.
+    // It is idempotent — it reuses the live socket unless the signed-in user
+    // changed — so calling it twice does not open a second connection.
     // We do NOT call disposeSocket() on dispose — the socket lifecycle is owned by
     // the app session, not by this screen. Disposing here was killing real-time
     // alerts for the dashboard whenever the user navigated away from CCTV.
@@ -413,7 +419,10 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
   }
 
   Widget _buildFilterChips(CctvProvider provider, bool isDark) {
-    final filters = ['All', 'Unresolved', 'Fall', 'Agitation', 'Pacing', 'Inactivity', 'Lying Down'];
+    // Mirrors the web's AlertSidebar FILTERS. 'Pacing' is deliberately absent:
+    // Module F was removed from ai_core and there is no 'Pacing' value in the
+    // Incident enum, so the pill could only ever return zero results.
+    final filters = ['All', 'Unresolved', 'Fall', 'Agitation', 'Inactivity', 'Lying Down'];
     return Container(
       height: 40,
       margin: const EdgeInsets.only(bottom: 12),

@@ -4,6 +4,7 @@ import '../../../core/services/secure_storage_service.dart';
 import '../services/admin_api_service.dart';
 import '../../nurse/services/nurse_api_service.dart';
 import '../../guardian/services/guardian_api_service.dart';
+import '../../../core/constants/facilities.dart';
 
 class AdminSettingsProvider extends ChangeNotifier {
   final _adminService = AdminApiService();
@@ -88,9 +89,9 @@ class AdminSettingsProvider extends ChangeNotifier {
       if (userId != null && userId.isNotEmpty) {
         Map<String, dynamic> profileData;
 
-        if (userId.startsWith('N-')) {
+        if (Facilities.isNurseId(userId)) {
           profileData = await _nurseService.getNurseProfile(userId);
-        } else if (userId.startsWith('G-')) {
+        } else if (Facilities.isGuardianId(userId)) {
           profileData = await _guardianService.getGuardian(userId);
         } else {
           profileData = await _adminService.getAdminProfile(userId);
@@ -127,9 +128,9 @@ class AdminSettingsProvider extends ChangeNotifier {
       final userId = await SecureStorageService.getUserId() ?? '';
       final prefs = await SharedPreferences.getInstance();
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         await _nurseService.updateProfile(userId, {'name': name, 'theme': themeSelection});
-      } else if (userId.startsWith('G-')) {
+      } else if (Facilities.isGuardianId(userId)) {
         await _guardianService.updateGuardian(userId, {'name': name, 'theme': themeSelection});
       } else {
         await _adminService.updateProfile(userId, {'name': name, 'theme': themeSelection});
@@ -163,9 +164,9 @@ class AdminSettingsProvider extends ChangeNotifier {
     try {
       final userId = await SecureStorageService.getUserId() ?? '';
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         await _nurseService.changePassword(userId, oldPassword, newPassword);
-      } else if (userId.startsWith('G-')) {
+      } else if (Facilities.isGuardianId(userId)) {
         await _guardianService.changePassword(
           guardianId: userId,
           oldPassword: oldPassword,
@@ -196,7 +197,7 @@ class AdminSettingsProvider extends ChangeNotifier {
     try {
       final userId = await SecureStorageService.getUserId() ?? '';
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         _saveMessage = '2FA is managed globally by Administration.';
         _isLoading = false;
         notifyListeners();
@@ -227,7 +228,7 @@ class AdminSettingsProvider extends ChangeNotifier {
     try {
       final userId = await SecureStorageService.getUserId() ?? '';
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         _saveMessage = 'Not authorized to link accounts.';
         _isLoading = false;
         notifyListeners();
@@ -258,7 +259,7 @@ class AdminSettingsProvider extends ChangeNotifier {
     try {
       final userId = await SecureStorageService.getUserId() ?? '';
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         _saveMessage = 'Not authorized to unlink accounts.';
         _isLoading = false;
         notifyListeners();
@@ -302,7 +303,7 @@ class AdminSettingsProvider extends ChangeNotifier {
     try {
       final userId = await SecureStorageService.getUserId() ?? '';
 
-      if (userId.startsWith('N-')) {
+      if (Facilities.isNurseId(userId)) {
         _saveMessage = 'Account deactivation requires Administrator approval.';
         _isLoading = false;
         notifyListeners();

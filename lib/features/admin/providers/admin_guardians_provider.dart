@@ -1,7 +1,32 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../guardian/services/guardian_api_service.dart';
 import '../../residents/services/resident_api_service.dart';
+
+/// Pull the backend's own explanation out of a failure.
+///
+/// WHY THIS EXISTS
+///
+/// Every write in this provider used to swallow the exception into a
+/// debugPrint and hand the UI a bare `false`, which the panels turned into
+/// "Failed to provision account." — a sentence that is true of a duplicate
+/// email, an expired session, a rejected field and a dead network alike. The
+/// backend already sends a specific `message` on every one of those; it was
+/// simply being thrown away, and the operator was left guessing.
+String _failureMessage(Object error, String fallback) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    if (data is Map && data['message'] is String && (data['message'] as String).isNotEmpty) {
+      return data['message'] as String;
+    }
+    if (error.response == null) {
+      return 'Could not reach the server. Check your connection and try again.';
+    }
+    return '$fallback (HTTP ${error.response?.statusCode}).';
+  }
+  return fallback;
+}
 
 class AdminGuardiansProvider extends ChangeNotifier {
   final _guardianService = GuardianApiService();
@@ -108,6 +133,7 @@ class AdminGuardiansProvider extends ChangeNotifier {
 
   Future<bool> addGuardian(Map<String, dynamic> guardianData) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -119,7 +145,7 @@ class AdminGuardiansProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error adding guardian: $e');
-      _errorMessage = 'Failed to add guardian.';
+      _errorMessage = _failureMessage(e, 'Failed to provision account.');
     }
     _isLoading = false;
     notifyListeners();
@@ -127,6 +153,8 @@ class AdminGuardiansProvider extends ChangeNotifier {
   }
 
   Future<bool> updateGuardian(String id, Map<String, dynamic> updateData) async {
+    _errorMessage = null;
+
     try {
       final result = await _guardianService.updateGuardian(id, updateData);
       final updatedGuardian = result['guardian'] ?? result;
@@ -138,6 +166,8 @@ class AdminGuardiansProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error updating guardian: $e');
+      _errorMessage = _failureMessage(e, 'Failed to update account.');
+      notifyListeners();
     }
     return false;
   }

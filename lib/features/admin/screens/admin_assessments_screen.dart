@@ -7,6 +7,7 @@ import '../providers/admin_dashboard_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../widgets/assessment_history_card.dart';
 import '../widgets/assessment_builder_sheet.dart';
+import '../../cctv/widgets/alerts_sheet.dart';
 
 class AdminAssessmentsScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -81,7 +82,12 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
           Image.asset('assets/images/visio.png', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
-          Icon(Icons.notifications_none, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
+          // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
+          NotificationBellButton(
+            color: isDark ? Colors.white : const Color(0xFF00A8E8),
+            isDark: isDark,
+            size: 24,
+          ),
         ],
       ),
     );

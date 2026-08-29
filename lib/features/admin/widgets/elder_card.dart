@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../core/constants/facilities.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ElderCard extends StatelessWidget {
   final dynamic resident;
@@ -24,6 +27,8 @@ class ElderCard extends StatelessWidget {
         : '$firstName $middleName $lastName';
         
     final String house = resident['house']?.replaceAll('House of ', '') ?? 'Unassigned';
+    final bool showHouse =
+        Facilities.hasHouseChoice(context.read<AuthProvider>().facility);
     final String? attendance = resident['attendance'];
     final bool hasNotes = (resident['notes'] ?? '').toString().trim().isNotEmpty;
 
@@ -212,21 +217,28 @@ class ElderCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.home_work_rounded, size: 16, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                      const SizedBox(width: 6),
-                      Text(
-                        house,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                  // Grace's only — see Facilities.hasHouseChoice. Kept as an empty
+                  // box rather than removed: this footer is spaceBetween, so
+                  // dropping the child outright would slide the item on the
+                  // right over to the left.
+                  if (!showHouse)
+                    const SizedBox.shrink()
+                  else
+                    Row(
+                      children: [
+                        Icon(Icons.home_work_rounded, size: 16, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                        const SizedBox(width: 6),
+                        Text(
+                          house,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   Icon(Icons.chevron_right_rounded, color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1), size: 20),
                 ],
               ),

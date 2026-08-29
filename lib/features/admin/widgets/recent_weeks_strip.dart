@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/network/dio_client.dart';
 import 'week_sparkline.dart';
@@ -75,7 +76,9 @@ Color _severityBg(int total, bool isDark) {
 }
 
 Future<_WeekSummary> _fetchWeek(DateTime sunday) async {
-  final tz  = DateTime.now().timeZoneName;
+  // Same reason as alert_history_screen.dart: timeZoneName is not a value the
+  // backend's MongoDB can bucket by. See ApiConstants.deviceTimeZone.
+  final tz  = ApiConstants.deviceTimeZone;
   final iso = _iso(sunday);
   final res = await DioClient.instance.get(
     '/incidents/stats/weekly',
@@ -83,7 +86,8 @@ Future<_WeekSummary> _fetchWeek(DateTime sunday) async {
   );
 
   final raw        = (res.data as List<dynamic>?) ?? [];
-  final categories = ['Fall', 'Agitation', 'Pacing', 'Inactivity', 'Lying Down'];
+  // 'Pacing' removed — no such value in the Incident enum (see ai_core Module F).
+  final categories = ['Fall', 'Agitation', 'Inactivity', 'Lying Down'];
 
   final byDate = <String, Map<String, int>>{};
   for (final item in raw) {
