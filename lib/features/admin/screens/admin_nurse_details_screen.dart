@@ -5,6 +5,8 @@ import '../../../core/constants/facilities.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_nurses_provider.dart';
 import '../widgets/delete_nurse_dialog.dart';
+import '../../../core/utils/validators.dart';
+import '../../../core/widgets/inline_error_banner.dart';
 
 class AdminNurseDetailsScreen extends StatefulWidget {
   final dynamic nurse;
@@ -183,6 +185,12 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
     String selectedHouse = _currentNurse['houseAssigned'] ?? '';
     String selectedStatus = _currentNurse['status'] ?? 'Active';
 
+    // Validation text for this sheet. It is rendered by an InlineErrorBanner
+    // just above the action row rather than a SnackBar, which the Scaffold
+    // would paint behind the sheet where nobody can see it.
+    String? errorText;
+    bool isSaving = false;
+
     // Houses for the signed-in user's facility. A Grace's admin must never be
     // offered a Saint Anthony house — the backend would reject the write, but
     // the UI should not offer it at all.
@@ -312,12 +320,14 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                           ),
                         ),
                       ),
+                      if (errorText != null)
+                        InlineErrorBanner(message: errorText!, isDark: isDark),
                       const SizedBox(height: 32),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: isSaving ? null : () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!, width: 2),
@@ -330,15 +340,48 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: () async {
+                              onPressed: isSaving ? null : () async {
+                                // Trimmed once, here, so what is validated is
+                                // exactly what is sent. Saving an untrimmed or
+                                // empty name is what put blank and "None"
+                                // values on the nurse list in the first place.
+                                final firstName  = firstNameCtrl.text.trim();
+                                final middleName = middleNameCtrl.text.trim();
+                                final lastName   = lastNameCtrl.text.trim();
+                                final email      = emailCtrl.text.trim();
+
+                                final missing = <String>[
+                                  if (Validators.isBlank(firstName)) 'First Name',
+                                  if (Validators.isBlank(lastName)) 'Last Name',
+                                  if (Validators.isBlank(email)) 'Email Address',
+                                  if (_showHouse && selectedHouse.isEmpty) 'House Assignment',
+                                ];
+
+                                if (missing.isNotEmpty) {
+                                  setModalState(() => errorText =
+                                      'Please fill in: ${missing.join(', ')}.');
+                                  return;
+                                }
+
+                                if (!Validators.isValidEmail(email)) {
+                                  setModalState(() => errorText =
+                                      'Enter a valid email address, e.g. nurse@visiosphere.gov.');
+                                  return;
+                                }
+
+                                setModalState(() {
+                                  errorText = null;
+                                  isSaving = true;
+                                });
+
                                 final provider = context.read<AdminNursesProvider>();
                                 final success = await provider.updateNurseProfile(
                                   _currentNurse['nurseId'],
                                   {
-                                    'firstName': firstNameCtrl.text,
-                                    'middleName': middleNameCtrl.text,
-                                    'lastName': lastNameCtrl.text,
-                                    'email': emailCtrl.text,
+                                    'firstName': firstName,
+                                    'middleName': middleName,
+                                    'lastName': lastName,
+                                    'email': email,
                                     'houseAssigned': selectedHouse,
                                     'status': selectedStatus,
                                   }
@@ -348,10 +391,10 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
 
                                 if (success) {
                                   setState(() {
-                                    _currentNurse['firstName'] = firstNameCtrl.text;
-                                    _currentNurse['middleName'] = middleNameCtrl.text;
-                                    _currentNurse['lastName'] = lastNameCtrl.text;
-                                    _currentNurse['email'] = emailCtrl.text;
+                                    _currentNurse['firstName'] = firstName;
+                                    _currentNurse['middleName'] = middleName;
+                                    _currentNurse['lastName'] = lastName;
+                                    _currentNurse['email'] = email;
                                     _currentNurse['houseAssigned'] = selectedHouse;
                                     _currentNurse['status'] = selectedStatus;
                                   });
@@ -360,9 +403,14 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                                     const SnackBar(content: Text('Profile updated successfully.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Failed to update profile.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-                                  );
+                                  setModalState(() {
+                                    isSaving = false;
+                                    // AdminNursesProvider.updateNurseProfile does
+                                    // not publish a reason, and provider.errorMessage
+                                    // can still hold an unrelated message from an
+                                    // earlier fetch — so do not show it here.
+                                    errorText = 'Failed to update profile. Please check your connection and try again.';
+                                  });
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -371,7 +419,9 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 elevation: 0,
                               ),
-                              child: const Text('Save Changes', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: isSaving
+                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : const Text('Save Changes', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],

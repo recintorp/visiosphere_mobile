@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:quill_html_editor/quill_html_editor.dart'; 
 import '../providers/admin_assessments_provider.dart';
+import '../../../core/widgets/inline_error_banner.dart';
 
 class AssessmentBlockEditor extends StatelessWidget {
   final Map<String, dynamic> block;
@@ -391,6 +392,10 @@ class _FileBlockEditor extends StatefulWidget {
 class _FileBlockEditorState extends State<_FileBlockEditor> {
   bool _isUploading = false;
 
+  /// Shown inside this block rather than as a SnackBar: the report builder is
+  /// a full-height sheet, so a SnackBar is painted behind it and never seen.
+  String? _uploadError;
+
   Future<void> _pickFile() async {
     final isImage = widget.block['type'] == 'image';
     
@@ -399,7 +404,10 @@ class _FileBlockEditorState extends State<_FileBlockEditor> {
     );
 
     if (result != null && result.files.single.path != null && mounted) {
-      setState(() => _isUploading = true);
+      setState(() {
+        _isUploading = true;
+        _uploadError = null;
+      });
       
       File file = File(result.files.single.path!);
       final provider = context.read<AdminAssessmentsProvider>();
@@ -407,19 +415,25 @@ class _FileBlockEditorState extends State<_FileBlockEditor> {
       final success = await provider.uploadFileToBlock(widget.block['id'], file);
       
       if (!mounted) return;
-      setState(() => _isUploading = false);
-
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload file.'), backgroundColor: Color(0xFFE11D48)),
-        );
-      }
+      setState(() {
+        _isUploading = false;
+        _uploadError =
+            success ? null : 'Upload failed. Check your connection and try again.';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // `fileUrl` holds the DURABLE value — for anything stored on the mini PC
+    // that is a bare filename, which no image widget can load. `previewUrl` is
+    // the signed link the server mints for display. Trying to render the bare
+    // name is why an uploaded image never appeared. Attachments from the old
+    // S3 era have an absolute fileUrl and no previewUrl, so fall back to it.
     final fileUrl = widget.block['fileUrl'] as String?;
+    final previewUrl = (widget.block['previewUrl'] as String?) ?? fileUrl;
+    final hasFile = fileUrl != null && fileUrl.isNotEmpty;
+    final canPreview = previewUrl != null && previewUrl.startsWith('http');
     final isImage = widget.block['type'] == 'image';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -433,16 +447,26 @@ class _FileBlockEditorState extends State<_FileBlockEditor> {
       ),
       child: Column(
         children: [
-          if (fileUrl != null) ...[
-            if (isImage)
+          if (hasFile) ...[
+            if (isImage && canPreview)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(fileUrl, height: 150, fit: BoxFit.cover),
+                child: Image.network(
+                  previewUrl,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Icon(Icons.broken_image_rounded, size: 64, color: isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8)),
+                ),
               )
             else
               Icon(Icons.insert_drive_file_rounded, size: 64, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
             const SizedBox(height: 16),
             Text('File uploaded successfully!', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+          ],
+
+          if (_uploadError != null) ...[
+            InlineErrorBanner(message: _uploadError!, isDark: isDark, topMargin: 0),
             const SizedBox(height: 16),
           ],
           
@@ -452,7 +476,7 @@ class _FileBlockEditorState extends State<_FileBlockEditor> {
             ElevatedButton.icon(
               onPressed: _pickFile,
               icon: Icon(isImage ? Icons.image_rounded : Icons.folder_rounded),
-              label: Text(fileUrl == null ? 'Select ${isImage ? 'Image' : 'File'}' : 'Replace ${isImage ? 'Image' : 'File'}'),
+              label: Text(hasFile ? 'Replace ${isImage ? 'Image' : 'File'}' : 'Select ${isImage ? 'Image' : 'File'}'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? const Color(0xFF00A8E8) : const Color(0xFF0F172A),
                 foregroundColor: Colors.white,

@@ -22,21 +22,54 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final auth = context.read<AuthProvider>();
-      final cctv = context.read<CctvProvider>();
-      context.read<AdminDashboardProvider>().fetchDashboardData(
-        isNurseView:  widget.isNurseView,
-        userId:       auth.userId,
-        userRole:     auth.userRole,
-        cctvProvider: cctv,
-      );
+      _refreshEverything();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Look again every time the app comes back to the foreground.
+  ///
+  /// This is the mobile half of "a rename on the web shows up on the phone".
+  /// The name is saved on the server the moment it is changed, on either
+  /// client; the only thing missing was a moment when mobile re-read it.
+  /// Resuming is that moment — it costs one request, and only when the user
+  /// actually comes back to the app, so nothing polls in the background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    _refreshEverything();
+  }
+
+  /// Refresh BOTH names, not just the one this screen happens to print.
+  ///
+  /// The nurse hub greets with AdminDashboardProvider.nurseName and the admin
+  /// dashboard with AuthProvider.userName. Refreshing only one of them is how
+  /// the header and System Settings ended up disagreeing about who you are.
+  void _refreshEverything() {
+    final auth = context.read<AuthProvider>();
+    final cctv = context.read<CctvProvider>();
+
+    auth.refreshIdentity();
+    context.read<AdminDashboardProvider>().fetchDashboardData(
+      isNurseView:  widget.isNurseView,
+      userId:       auth.userId,
+      userRole:     auth.userRole,
+      cctvProvider: cctv,
+    );
   }
 
   @override
@@ -51,9 +84,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: Consumer3<AdminDashboardProvider, AuthProvider, CctvProvider>(
           builder: (context, dashboard, auth, cctv, _) {
-            final displayName = widget.isNurseView
-                ? (dashboard.nurseName ?? auth.userName ?? 'Nurse')
-                : (auth.userName ?? 'Administrator');
+            // Empty is not a name. `dashboard.nurseName ?? auth.userName` only
+            // fell through on NULL, so a profile response that resolved to ''
+            // printed a blank greeting instead of falling back — which reads as
+            // "the display name is broken" just as loudly as a wrong name does.
+            final nurseName = widget.isNurseView
+                ? (dashboard.nurseName?.trim() ?? '')
+                : '';
+            final authName    = auth.userName?.trim() ?? '';
+            final displayName = nurseName.isNotEmpty
+                ? nurseName
+                : (authName.isNotEmpty
+                    ? authName
+                    : (widget.isNurseView ? 'Nurse' : 'Administrator'));
 
             return Column(
               children: [

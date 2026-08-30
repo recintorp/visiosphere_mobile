@@ -1,4 +1,18 @@
 class Validators {
+  /// Empty, whitespace-only, or one of the placeholder words the UI prints in
+  /// place of a missing value. Saving any of these is what produced the blank
+  /// and "None" rows QA reported, so none of them count as a real answer.
+  static bool isBlank(String? value) {
+    final v = (value ?? '').trim().toLowerCase();
+    return v.isEmpty || v == 'none' || v == 'n/a' || v == 'null';
+  }
+
+  /// Deliberately permissive: it rejects the shapes that cannot be an address
+  /// at all, and leaves the rest to the server, which is the only thing that
+  /// can actually know whether an address exists.
+  static bool isValidEmail(String value) =>
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim());
+
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email is required';

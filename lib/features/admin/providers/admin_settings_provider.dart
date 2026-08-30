@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/secure_storage_service.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../services/admin_api_service.dart';
 import '../../nurse/services/nurse_api_service.dart';
 import '../../guardian/services/guardian_api_service.dart';
@@ -99,11 +100,20 @@ class AdminSettingsProvider extends ChangeNotifier {
 
         final userData = profileData['admin'] ?? profileData['nurse'] ?? profileData['guardian'] ?? profileData;
 
-        if (userData['firstName'] != null && userData['lastName'] != null) {
-          _displayName = '${userData['firstName']} ${userData['lastName']}';
-        } else {
-          _displayName = userData['name'] ?? '';
-        }
+        // This block used to read:
+        //
+        //   if (firstName != null && lastName != null)
+        //     _displayName = '$firstName $lastName';
+        //   else
+        //     _displayName = name;
+        //
+        // A nurse ALWAYS has firstName and lastName, so the first branch always
+        // won and her saved `displayName` was never once looked at. She typed a
+        // new name, saved it, and the box reverted to her legal name the moment
+        // this ran — which is exactly what "changing the name is not applying"
+        // looked like. AuthProvider.resolveName is the one rule the server and
+        // both clients now agree on.
+        _displayName = AuthProvider.resolveName(userData as Map);
 
         _theme = userData['theme'] ?? prefs.getString('appTheme_$userId') ?? prefs.getString('appTheme') ?? 'default';
         _is2FAEnabled = userData['is2FAEnabled'] ?? false;

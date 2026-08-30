@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/admin_assessments_provider.dart';
 import 'assessment_block_editors.dart';
+import '../../../core/widgets/inline_error_banner.dart';
 
 class TagInput extends StatefulWidget {
   final List<String> tags;
@@ -190,6 +191,14 @@ class AssessmentBuilderSheet extends StatefulWidget {
 class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
   late TextEditingController _titleController;
   bool _isSubmitting = false;
+
+  // Validation is shown INSIDE this panel, next to the thing that is wrong.
+  // These used to be SnackBars, which the Scaffold paints behind the sheet —
+  // the sheet is full height, so the message was never visible and Save looked
+  // like it silently failed. One field, one message, in the field's own place.
+  String? _titleError;   // under the document title
+  String? _blocksError;  // in the module area, where modules are added
+  String? _saveError;    // above the action row, for a failed submission
   final List<String> _predefinedTags = [
     'Routine Vitals',
     'Fall Incident',
@@ -220,21 +229,28 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
 
     if (!mounted) return;
 
-    if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an official report title.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+    final titleMissing  = _titleController.text.trim().isEmpty;
+    final blocksMissing = provider.blocks.isEmpty;
+
+    if (titleMissing || blocksMissing) {
+      setState(() {
+        _saveError   = null;
+        _titleError  = titleMissing
+            ? 'Enter an official report title.'
+            : null;
+        _blocksError = blocksMissing
+            ? 'Add at least one module below before saving this report.'
+            : null;
+      });
       return;
     }
 
-    if (provider.blocks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one module to the report.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _titleError  = null;
+      _blocksError = null;
+      _saveError   = null;
+      _isSubmitting = true;
+    });
     provider.setReportTitle(_titleController.text.trim());
 
     final success = await provider.submitReport(
@@ -256,9 +272,8 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save report.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-      );
+      setState(() => _saveError =
+          'Failed to save report. Please check your connection and try again.');
     }
   }
 
@@ -350,6 +365,9 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
               children: [
                 TextField(
                   controller: _titleController,
+                  onChanged: (_) {
+                    if (_titleError != null) setState(() => _titleError = null);
+                  },
                   style: TextStyle(fontFamily: 'Montserrat', fontSize: 22.0, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Document Title...',
@@ -361,12 +379,16 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
                     contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
                   ),
                 ),
+                if (_titleError != null)
+                  InlineErrorBanner(message: _titleError!, isDark: isDark, topMargin: 4),
                 TagInput(
                   tags: provider.reportTags,
                   onChange: (newTags) => provider.setReportTags(newTags),
                   suggestions: _predefinedTags,
                   isDark: isDark,
                 ),
+                if (_saveError != null)
+                  InlineErrorBanner(message: _saveError!, isDark: isDark, topMargin: 12),
                 const SizedBox(height: 16.0),
                 Row(
                   children: [
@@ -438,6 +460,8 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
                   else
                     ...provider.blocks.map((block) => _buildBlockWrapper(block, provider, isDark)),
 
+                  if (_blocksError != null && provider.blocks.isEmpty)
+                    InlineErrorBanner(message: _blocksError!, isDark: isDark, topMargin: 0),
                   const SizedBox(height: 24.0),
                   const Text('APPEND MODULE', style: TextStyle(fontFamily: 'Montserrat', fontSize: 11.0, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 1.5)),
                   const SizedBox(height: 16.0),

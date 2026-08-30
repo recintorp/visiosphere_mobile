@@ -13,6 +13,8 @@ import '../widgets/elder_card.dart';
 import '../widgets/generate_report_modal.dart';
 import '../widgets/archived_reports_modal.dart';
 import '../../cctv/widgets/alerts_sheet.dart';
+import '../../../core/utils/validators.dart';
+import '../../../core/widgets/inline_error_banner.dart';
 
 class AdminEldersScreen extends StatefulWidget {
   final VoidCallback? onMenuTap;
@@ -76,6 +78,13 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
     final lastNameCtrl = TextEditingController();
     String selectedHouse = _houses.isNotEmpty ? _houses.first : '';
 
+    // Validation text for this sheet. It is rendered by an InlineErrorBanner
+    // inside the panel, not as a SnackBar: the Scaffold paints a SnackBar
+    // BEHIND the bottom sheet, so the old message was invisible and Save
+    // simply looked like it did nothing. QA reported exactly that.
+    String? errorText;
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -92,90 +101,115 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
             left: 24,
             right: 24,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: isDark ? const Color(0xFF334155) : Colors.grey[300], borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text('Add New Resident', style: TextStyle(fontFamily: 'Montserrat', fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-              Text('Create a new elder profile for the facility', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
-              const SizedBox(height: 24),
-              _buildFieldLabel('FIRST NAME *', isDark),
-              _buildEntryField(firstNameCtrl, 'Enter first name', isDark),
-              const SizedBox(height: 16),
-              _buildFieldLabel('MIDDLE NAME', isDark),
-              _buildEntryField(middleNameCtrl, 'Optional', isDark),
-              const SizedBox(height: 16),
-              _buildFieldLabel('LAST NAME *', isDark),
-              _buildEntryField(lastNameCtrl, 'Enter last name', isDark),
-              const SizedBox(height: 16),
-              // Grace's only — see Facilities.hasHouseChoice. Saint Anthony is one
-              // building, so this would offer a single option and imply a choice
-              // that does not exist. The sole house is still submitted below.
-              if (_showHouse) ...[
-                _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
-                    borderRadius: BorderRadius.circular(12),
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: isDark ? const Color(0xFF334155) : Colors.grey[300], borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      // null when the list is empty (unknown facility) — a
-                      // DropdownButton asserts if `value` is not among `items`.
-                      value: _houses.contains(selectedHouse) ? selectedHouse : null,
-                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
-                      style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
-                      items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
-                      onChanged: (val) => setModalState(() => selectedHouse = val!),
+                ),
+                const SizedBox(height: 24),
+                Text('Add New Resident', style: TextStyle(fontFamily: 'Montserrat', fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                Text('Create a new elder profile for the facility', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
+                const SizedBox(height: 24),
+                _buildFieldLabel('FIRST NAME *', isDark),
+                _buildEntryField(firstNameCtrl, 'Enter first name', isDark),
+                const SizedBox(height: 16),
+                _buildFieldLabel('MIDDLE NAME', isDark),
+                _buildEntryField(middleNameCtrl, 'Optional', isDark),
+                const SizedBox(height: 16),
+                _buildFieldLabel('LAST NAME *', isDark),
+                _buildEntryField(lastNameCtrl, 'Enter last name', isDark),
+                const SizedBox(height: 16),
+                // Grace's only — see Facilities.hasHouseChoice. Saint Anthony is one
+                // building, so this would offer a single option and imply a choice
+                // that does not exist. The sole house is still submitted below.
+                if (_showHouse) ...[
+                  _buildFieldLabel('HOUSE ASSIGNMENT *', isDark),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey[200]!),
+                      borderRadius: BorderRadius.circular(12),
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        // null when the list is empty (unknown facility) — a
+                        // DropdownButton asserts if `value` is not among `items`.
+                        value: _houses.contains(selectedHouse) ? selectedHouse : null,
+                        dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                        style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                        items: _houses.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
+                        onChanged: (val) => setModalState(() => selectedHouse = val!),
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                ],
+                if (errorText != null)
+                  InlineErrorBanner(message: errorText!, isDark: isDark, topMargin: 8),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: isSaving ? null : () async {
+                      final firstName  = firstNameCtrl.text.trim();
+                      final middleName = middleNameCtrl.text.trim();
+                      final lastName   = lastNameCtrl.text.trim();
+
+                      final missing = <String>[
+                        if (Validators.isBlank(firstName)) 'First Name',
+                        if (Validators.isBlank(lastName)) 'Last Name',
+                        if (_showHouse && selectedHouse.isEmpty) 'House Assignment',
+                      ];
+
+                      if (missing.isNotEmpty) {
+                        setModalState(() => errorText =
+                            'Please fill in: ${missing.join(', ')}.');
+                        return;
+                      }
+
+                      setModalState(() {
+                        errorText = null;
+                        isSaving = true;
+                      });
+
+                      final success = await context.read<AdminEldersProvider>().addResident({
+                        'firstName': firstName,
+                        'middleName': middleName,
+                        'lastName': lastName,
+                        'house': selectedHouse,
+                      });
+                    
+                      if (!context.mounted) return;
+                    
+                      if (success) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resident Added Successfully', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)));
+                      } else {
+                        setModalState(() {
+                          isSaving = false;
+                          errorText = 'Failed to add resident. Please check your connection and try again.';
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A8E8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+                    child: isSaving
+                        ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Save Resident', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
                 ),
-                const SizedBox(height: 16),
               ],
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (firstNameCtrl.text.trim().isEmpty || lastNameCtrl.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('First and Last name required', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
-                      return;
-                    }
-                    
-                    final success = await context.read<AdminEldersProvider>().addResident({
-                      'firstName': firstNameCtrl.text.trim(),
-                      'middleName': middleNameCtrl.text.trim(),
-                      'lastName': lastNameCtrl.text.trim(),
-                      'house': selectedHouse,
-                    });
-                    
-                    if (!context.mounted) return;
-                    
-                    if (success) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resident Added Successfully', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add resident', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00A8E8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                  child: const Text('Save Resident', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

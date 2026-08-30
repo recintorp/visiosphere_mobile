@@ -5,6 +5,8 @@ import '../../../core/constants/facilities.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/admin_elders_provider.dart';
 import '../widgets/delete_elder_dialog.dart';
+import '../../../core/utils/validators.dart';
+import '../../../core/widgets/inline_error_banner.dart';
 
 class AdminElderDetailsScreen extends StatefulWidget {
   final dynamic resident;
@@ -106,6 +108,12 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
       selectedHouse = houses.isNotEmpty ? houses.first : '';
     }
 
+    // Validation text for this sheet, rendered by an InlineErrorBanner inside
+    // the panel. A SnackBar is painted by the Scaffold behind the sheet, where
+    // the user cannot see it — that is the misplaced message QA reported.
+    String? errorText;
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -199,12 +207,14 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                         ),
                         const SizedBox(height: 16),
                       ],
+                      if (errorText != null)
+                        InlineErrorBanner(message: errorText!, isDark: isDark),
                       const SizedBox(height: 32),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: isSaving ? null : () => Navigator.pop(context),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey[300]!, width: 2),
@@ -217,16 +227,41 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: () async {
+                              onPressed: isSaving ? null : () async {
+                                // Trimmed once, here, so what is validated is
+                                // exactly what is sent. This panel previously
+                                // had no validation at all, which is how a
+                                // resident could end up saved with no name.
+                                final firstName  = firstNameCtrl.text.trim();
+                                final middleName = middleNameCtrl.text.trim();
+                                final lastName   = lastNameCtrl.text.trim();
+
+                                final missing = <String>[
+                                  if (Validators.isBlank(firstName)) 'First Name',
+                                  if (Validators.isBlank(lastName)) 'Last Name',
+                                  if (_showHouse && selectedHouse.isEmpty) 'House Assignment',
+                                ];
+
+                                if (missing.isNotEmpty) {
+                                  setModalState(() => errorText =
+                                      'Please fill in: ${missing.join(', ')}.');
+                                  return;
+                                }
+
+                                setModalState(() {
+                                  errorText = null;
+                                  isSaving = true;
+                                });
+
                                 final provider = context.read<AdminEldersProvider>();
                                 final residentId = _currentResident['_id'] ?? _currentResident['id'];
                                 
                                 final success = await provider.updateResident(
                                   residentId,
                                   {
-                                    'firstName': firstNameCtrl.text,
-                                    'middleName': middleNameCtrl.text,
-                                    'lastName': lastNameCtrl.text,
+                                    'firstName': firstName,
+                                    'middleName': middleName,
+                                    'lastName': lastName,
                                     'house': selectedHouse,
                                   }
                                 );
@@ -235,9 +270,9 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
 
                                 if (success) {
                                   setState(() {
-                                    _currentResident['firstName'] = firstNameCtrl.text;
-                                    _currentResident['middleName'] = middleNameCtrl.text;
-                                    _currentResident['lastName'] = lastNameCtrl.text;
+                                    _currentResident['firstName'] = firstName;
+                                    _currentResident['middleName'] = middleName;
+                                    _currentResident['lastName'] = lastName;
                                     _currentResident['house'] = selectedHouse;
                                   });
                                   Navigator.pop(context);
@@ -245,9 +280,10 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                                     const SnackBar(content: Text('Profile updated successfully.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Failed to update profile.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)),
-                                  );
+                                  setModalState(() {
+                                    isSaving = false;
+                                    errorText = 'Failed to update profile. Please check your connection and try again.';
+                                  });
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -256,7 +292,9 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 elevation: 0,
                               ),
-                              child: const Text('Save Changes', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: isSaving
+                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : const Text('Save Changes', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],

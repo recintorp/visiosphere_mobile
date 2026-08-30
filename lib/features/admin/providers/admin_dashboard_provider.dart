@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../admin/services/admin_api_service.dart';
 import '../../audit/services/audit_api_service.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../cctv/providers/cctv_provider.dart';
 import '../../incident/services/incident_api_service.dart';
 import '../../notification/services/notification_api_service.dart';
@@ -157,14 +158,30 @@ class AdminDashboardProvider extends ChangeNotifier {
 
       if (isLinkedNurse && results.length > 2) {
         final nd = results[2] as Map<String, dynamic>;
-        _nurseName = '${nd['firstName']} ${nd['lastName']}';
+        // Not firstName + lastName: that ignored the name the nurse saved
+        // in System Settings, so the dashboard greeted her by her old one
+        // forever. One rule, shared with the server — see
+        // AuthProvider.resolveName and backend/models/Nurse.js.
+        //
+        // Only ACCEPT a real answer: an unexpected response shape resolves to
+        // '' and would replace a good name with a blank header.
+        final resolved = AuthProvider.resolveName(nd);
+        if (resolved.isNotEmpty) _nurseName = resolved;
         _nurseId = nd['nurseId']; _nurseRole = 'Nurse'; _nurseProfilePic = nd['profilePic'];
         _registerNurseFcmToken(_nurseId!);
       }
 
       if (isStandaloneNurse && results.length > 2) {
         final nd = results[2] as Map<String, dynamic>;
-        _nurseName = '${nd['firstName']} ${nd['lastName']}';
+        // Not firstName + lastName: that ignored the name the nurse saved
+        // in System Settings, so the dashboard greeted her by her old one
+        // forever. One rule, shared with the server — see
+        // AuthProvider.resolveName and backend/models/Nurse.js.
+        //
+        // Only ACCEPT a real answer: an unexpected response shape resolves to
+        // '' and would replace a good name with a blank header.
+        final resolved = AuthProvider.resolveName(nd);
+        if (resolved.isNotEmpty) _nurseName = resolved;
         _nurseId = nd['nurseId']; _nurseRole = 'Nurse'; _nurseProfilePic = nd['profilePic'];
         _registerNurseFcmToken(_nurseId!);
       }

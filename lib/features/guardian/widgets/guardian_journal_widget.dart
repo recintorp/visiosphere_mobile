@@ -5,7 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../providers/guardian_provider.dart';
-import '../../../core/constants/api_constants.dart';
+import '../../admin/widgets/assessment_readonly_blocks.dart';
 
 class GuardianJournalWidget extends StatefulWidget {
   final bool hasElder;
@@ -538,6 +538,16 @@ class _GuardianJournalWidgetState extends State<GuardianJournalWidget> {
     );
   }
 
+  /// Report blocks are rendered by [AssessmentReadonlyBlock] — the same widget
+  /// the admin and nurse views use.
+  ///
+  /// This method used to be a second, independent copy of that rendering, and
+  /// it had drifted: report text is HTML from the Quill editor and was being
+  /// pushed through a plain Text widget (so guardians saw literal <p> and
+  /// &nbsp;), and there was no branch for `file` blocks at all, so an
+  /// attachment simply rendered as nothing. Both were already solved in the
+  /// shared widget. One renderer means a fix in one place reaches every reader
+  /// of a report, which is the point.
   Widget _renderBlocks(List<dynamic>? blocks, ThemeData theme) {
     if (blocks == null || blocks.isEmpty) {
       return Text('No detailed notes provided.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500));
@@ -546,112 +556,74 @@ class _GuardianJournalWidgetState extends State<GuardianJournalWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks.map<Widget>((block) {
-        final type = block['type'];
-        final content = block['content'];
-        final fileUrl = block['fileUrl'];
-
-        if (type == 'text') {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              content?.toString() ?? '',
-              style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurfaceVariant, height: 1.5, fontWeight: FontWeight.w500),
-            ),
-          );
-        }
-
-        if (type == 'checklist' && content is List) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: content.map<Widget>((item) {
-                final bool isChecked = item['checked'] == true;
-                final String text = item['text']?.toString() ?? '';
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        isChecked ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
-                        size: 20,
-                        color: isChecked ? const Color(0xFF10B981) : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          text,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: isChecked ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface,
-                            decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          );
-        }
-
-        if (type == 'image' && fileUrl != null) {
-          final fullUrl = fileUrl.startsWith('http') ? fileUrl : '${ApiConstants.baseUrl.replaceAll('/api', '')}$fileUrl';
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                fullUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) => 
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: const Color(0xFFEF4444).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.broken_image_rounded, color: Color(0xFFEF4444)),
-                        SizedBox(height: 8),
-                        Text('Image failed to load', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
-                      ]
-                    )
-                  ),
-              ),
-            ),
-          );
-        }
-
-        if (type == 'chart') {
-          final title = content?['chartTitle'] ?? 'Data Chart';
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1), 
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2))
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.bar_chart_rounded, color: theme.colorScheme.primary),
-                  const SizedBox(width: 12),
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: theme.colorScheme.primary)),
-                ]
-              )
-            )
-          );
-        }
-
-        return const SizedBox.shrink();
+        if (block is! Map) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: AssessmentReadonlyBlock(
+            block: Map<String, dynamic>.from(block),
+          ),
+        );
       }).toList(),
     );
   }
+}
+
+/// Flatten the Quill editor's HTML into plain text for the PDF.
+///
+/// The on-screen report renders this HTML properly (flutter_html, via
+/// AssessmentReadonlyBlock). The `pdf` package has no HTML renderer, so
+/// pushing the raw string into pw.Text printed literal `<p>` and `&nbsp;` in
+/// the guardian's downloaded copy. This keeps the text and the paragraph
+/// breaks and drops everything else — enough for a printed record, and
+/// honest about what it is rather than pretending to lay out markup.
+String htmlToPlainText(String? html) {
+  if (html == null || html.trim().isEmpty) return '';
+  var out = html;
+
+  // Block-level tags become line breaks before any tag is stripped, otherwise
+  // every paragraph would run into the next one.
+  out = out.replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n');
+  out = out.replaceAll(RegExp(r'</(p|div|li|h[1-6]|tr)>', caseSensitive: false), '\n');
+  out = out.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '• ');
+  out = out.replaceAll(RegExp(r'<[^>]+>'), '');
+
+  // The handful of entities Quill actually emits. Ampersand goes last, or it
+  // would re-decode the others' escapes.
+  const entities = {
+    '&nbsp;': ' ', '&lt;': '<', '&gt;': '>', '&quot;': '"',
+    '&#39;': "'", '&apos;': "'", '&amp;': '&',
+  };
+  entities.forEach((k, v) => out = out.replaceAll(k, v));
+
+  // Numeric entities, then collapse the blank lines the tag-stripping leaves.
+  out = out.replaceAllMapped(RegExp(r'&#(\d+);'), (m) {
+    final code = int.tryParse(m[1]!);
+    return code == null ? m[0]! : String.fromCharCode(code);
+  });
+  out = out.replaceAll(RegExp(r'[ \t]+'), ' ');
+  out = out.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+  return out.trim();
+}
+
+/// A readable name for an attachment.
+///
+/// The API sends `fileName` (the stored name) alongside the signed `fileUrl`.
+/// Falling back to the URL's last path segment keeps S3-era attachments, which
+/// have no `fileName`, from printing as a blank line.
+String attachmentLabel(Map block) {
+  final name = block['fileName'];
+  if (name is String && name.trim().isNotEmpty) return name.trim();
+
+  final url = block['fileUrl'];
+  if (url is String && url.isNotEmpty) {
+    try {
+      final segments = Uri.parse(url).pathSegments;
+      if (segments.isNotEmpty) return Uri.decodeComponent(segments.last);
+    } catch (_) {
+      // fall through
+    }
+  }
+  return 'Attached file';
 }
 
 class JournalPdfPreviewScreen extends StatelessWidget {
@@ -688,6 +660,27 @@ class JournalPdfPreviewScreen extends StatelessWidget {
 
     final blocks = assessment['blocks'] as List<dynamic>? ?? [];
     final tags = assessment['tags'] as List<dynamic>? ?? [];
+
+    // Images have to be resolved BEFORE the page is built: pw.Image needs real
+    // bytes and MultiPage.build is synchronous, which is why the PDF silently
+    // dropped every attachment. The URL the API hands back is signed and
+    // short-lived, so it is fetched now and used immediately.
+    //
+    // One unreachable image must not cost the guardian the whole report, so a
+    // failure is recorded as a missing entry and noted in the page instead.
+    final Map<int, pw.ImageProvider> blockImages = {};
+    for (var i = 0; i < blocks.length; i++) {
+      final block = blocks[i];
+      if (block is! Map) continue;
+      if (block['type'] != 'image') continue;
+      final url = block['fileUrl'];
+      if (url is! String || !url.startsWith('http')) continue;
+      try {
+        blockImages[i] = await networkImage(url);
+      } catch (_) {
+        // left absent on purpose — rendered as a placeholder line below
+      }
+    }
 
     pdf.addPage(
       pw.MultiPage(
@@ -751,14 +744,112 @@ class JournalPdfPreviewScreen extends StatelessWidget {
             
             pw.SizedBox(height: 16),
 
-            ...blocks.map((block) {
+            ...blocks.asMap().entries.map((entry) {
+              final index = entry.key;
+              final block = entry.value;
               final type = block['type'];
               final content = block['content'];
 
               if (type == 'text') {
+                // Flattened, not raw: the editor stores HTML and pw.Text would
+                // print the tags. See htmlToPlainText above.
+                final text = htmlToPlainText(content?.toString());
+                if (text.isEmpty) return pw.SizedBox();
                 return pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 12),
-                  child: pw.Text(content?.toString() ?? '', style: const pw.TextStyle(fontSize: 12, lineSpacing: 1.5)),
+                  child: pw.Text(text, style: const pw.TextStyle(fontSize: 12, lineSpacing: 1.5)),
+                );
+              }
+
+              if (type == 'image') {
+                final image = blockImages[index];
+                if (image == null) {
+                  return pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 12),
+                    child: pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.all(16),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400),
+                        color: PdfColors.grey100,
+                      ),
+                      child: pw.Text(
+                        'Attached image could not be loaded.',
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                      ),
+                    ),
+                  );
+                }
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 12),
+                  child: pw.Center(
+                    child: pw.ConstrainedBox(
+                      // Capped so a tall photo cannot push everything after it
+                      // onto later pages.
+                      constraints: const pw.BoxConstraints(maxHeight: 320),
+                      child: pw.Image(image, fit: pw.BoxFit.contain),
+                    ),
+                  ),
+                );
+              }
+
+              if (type == 'file') {
+                // A PDF cannot open an attachment, so the honest thing is to
+                // name it. Rendering nothing — which is what happened before —
+                // hid from the reader that the report had an attachment at all.
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 12),
+                  child: pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.blue200),
+                      color: PdfColors.blue50,
+                    ),
+                    child: pw.Text(
+                      'Attached file: ${attachmentLabel(block)}',
+                      style: const pw.TextStyle(fontSize: 10, color: PdfColors.blue800),
+                    ),
+                  ),
+                );
+              }
+
+              if (type == 'chart' && content is Map) {
+                // The values, not a picture of them. A printed record of a
+                // resident's vitals is read for the numbers, and a table cannot
+                // be misread the way an unlabelled sparkline can.
+                final title = content['chartTitle']?.toString() ?? 'Data Chart';
+                final points = content['dataPoints'] as List<dynamic>? ?? [];
+                if (points.isEmpty) return pw.SizedBox();
+                return pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 12),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(title, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                      pw.SizedBox(height: 6),
+                      pw.Table(
+                        border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+                        children: [
+                          pw.TableRow(
+                            decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                            children: [
+                              pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Reading', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
+                              pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Value', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
+                            ],
+                          ),
+                          ...points.map((pt) {
+                            final label = (pt is Map ? pt['label'] : null)?.toString() ?? '';
+                            final value = (pt is Map ? pt['value'] : null)?.toString() ?? '';
+                            return pw.TableRow(children: [
+                              pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(label, style: const pw.TextStyle(fontSize: 10))),
+                              pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text(value, style: const pw.TextStyle(fontSize: 10))),
+                            ]);
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
               }
 

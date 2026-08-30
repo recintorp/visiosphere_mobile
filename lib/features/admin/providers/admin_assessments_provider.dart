@@ -78,7 +78,14 @@ class AdminAssessmentsProvider extends ChangeNotifier {
           'id': b['_id'] ?? DateTime.now().microsecondsSinceEpoch.toString(),
           'type': b['type'],
           'content': b['content'],
-          'fileUrl': b['fileUrl'],
+          // The API hands back a signed, short-lived link in `fileUrl` and the
+          // durable stored name in `fileName`. Saving the signed link would put
+          // a URL that expires within the hour into the database, so the name
+          // is what this block carries and the link is kept only for display.
+          // Attachments from the old S3 era have no `fileName`; their absolute
+          // URL is the durable value and is passed through untouched.
+          'fileUrl': b['fileName'] ?? b['fileUrl'],
+          'previewUrl': b['fileUrl'],
         })
       );
     } else {
@@ -117,6 +124,7 @@ class AdminAssessmentsProvider extends ChangeNotifier {
                 }
               : '',
       'fileUrl': null,
+      'previewUrl': null,
     };
     _blocks.add(newBlock);
     notifyListeners();
@@ -139,10 +147,13 @@ class AdminAssessmentsProvider extends ChangeNotifier {
     }
   }
 
-  void updateBlockFile(String id, String? url) {
+  /// [storedName] is what gets saved with the report; [previewUrl] is a signed
+  /// link used only to render the attachment in the editor.
+  void updateBlockFile(String id, String? storedName, String? previewUrl) {
     final index = _blocks.indexWhere((b) => b['id'] == id);
     if (index != -1) {
-      _blocks[index]['fileUrl'] = url;
+      _blocks[index]['fileUrl'] = storedName;
+      _blocks[index]['previewUrl'] = previewUrl;
       notifyListeners();
     }
   }
@@ -150,7 +161,9 @@ class AdminAssessmentsProvider extends ChangeNotifier {
   Future<bool> uploadFileToBlock(String id, File file) async {
     try {
       final result = await _assessmentService.uploadFile(file);
-      updateBlockFile(id, result['fileUrl'] as String?);
+      final storedName = result['fileUrl'] as String?;
+      if (storedName == null || storedName.isEmpty) return false;
+      updateBlockFile(id, storedName, result['viewUrl'] as String?);
       return true;
     } catch (e) {
       debugPrint('Error uploading file: $e');
@@ -176,6 +189,8 @@ class AdminAssessmentsProvider extends ChangeNotifier {
       'authorName': authorName,
       'title': _reportTitle,
       'tags': _reportTags,
+      // `previewUrl` is deliberately not sent — it is a signed link that
+      // expires, and only `fileUrl` (the stored name) is durable.
       'blocks': _blocks.map((b) => {
         'type': b['type'],
         'content': b['content'],

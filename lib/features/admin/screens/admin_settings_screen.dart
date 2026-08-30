@@ -71,13 +71,25 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final authProvider = context.read<AuthProvider>();
     
     await provider.fetchSettings();
-    
+
     if (mounted) {
       setState(() {
         _displayNameController.text = provider.displayName.isNotEmpty ? provider.displayName : (authProvider.userName ?? '');
         _selectedTheme = provider.theme;
         _dataLoaded = true;
       });
+
+      // Take the server's answer as the truth for the whole app, not just for
+      // the text box above.
+      //
+      // This is the OTHER half of the sync: renaming on the WEB used to leave
+      // this phone greeting the old name until the next sign-in, because
+      // AuthProvider.userName is only written at login. fetchSettings() has
+      // just asked the server who this person is, so adopt it here. It is a
+      // no-op when the name has not changed.
+      if (provider.displayName.isNotEmpty) {
+        authProvider.updateDisplayName(provider.displayName);
+      }
     }
   }
 
