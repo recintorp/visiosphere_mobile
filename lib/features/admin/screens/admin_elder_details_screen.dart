@@ -54,6 +54,20 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
     super.dispose();
   }
 
+  /// Nurses do not delete residents.
+  ///
+  /// This is the web's rule — frontend/src/components/elders/BulkActionBar.jsx
+  /// withholds Delete from the nurse view, and the mobile guardians screen
+  /// already matched it. The residents screen was the one place that did not,
+  /// so a nurse could delete a resident record on her phone but not in a
+  /// browser. Deleting a resident is not a reversible convenience, so the
+  /// stricter of the two behaviours is the correct one to converge on.
+  ///
+  /// Keyed on the signed-in ROLE rather than a view flag: an admin who happens
+  /// to be looking at the nurse hub is still an admin and may still delete.
+  bool get _canDeleteResident =>
+      context.read<AuthProvider>().userRole != 'Nurse';
+
   void _showDeleteDialog() {
     final provider = context.read<AdminEldersProvider>();
     final navigator = Navigator.of(context);
@@ -447,6 +461,9 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
               if (value == 'delete') {
+                // Guarded here too: hiding a menu entry is a UI courtesy, not
+                // a rule. The rule is that this action does not run for a nurse.
+                if (!_canDeleteResident) return;
                 _showDeleteDialog();
               } else if (value == 'edit') {
                 _showEditModal(isDark);
@@ -463,16 +480,17 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    const Icon(Icons.person_off_rounded, color: Color(0xFFE11D48), size: 20),
-                    const SizedBox(width: 12),
-                    Text('Delete Resident', style: TextStyle(fontFamily: 'Montserrat', color: const Color(0xFFE11D48), fontWeight: FontWeight.w600)),
-                  ],
+              if (_canDeleteResident)
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_off_rounded, color: Color(0xFFE11D48), size: 20),
+                      const SizedBox(width: 12),
+                      Text('Delete Resident', style: TextStyle(fontFamily: 'Montserrat', color: const Color(0xFFE11D48), fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ],

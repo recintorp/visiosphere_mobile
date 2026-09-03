@@ -17,7 +17,8 @@ class AdminNursesScreen extends StatefulWidget {
   State<AdminNursesScreen> createState() => _AdminNursesScreenState();
 }
 
-class _AdminNursesScreenState extends State<AdminNursesScreen> {
+class _AdminNursesScreenState extends State<AdminNursesScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
 
   /// Houses for the signed-in user's facility.
@@ -42,15 +43,39 @@ class _AdminNursesScreenState extends State<AdminNursesScreen> {
     super.initState();
     _houses = Facilities.housesFor(context.read<AuthProvider>().facility);
     _showHouse = _houses.length > 1;
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<AdminNursesProvider>().fetchNurses();
-      }
+      if (mounted) _loadData();
     });
+  }
+
+  /// The one place this screen loads its data, so the first load and every
+  /// refresh can never drift apart.
+  void _loadData() {
+    context.read<AdminNursesProvider>().fetchNurses();
+  }
+
+  /// Look again every time the app comes back to the foreground.
+  ///
+  /// Web and mobile share one backend, so a record added or edited in a browser
+  /// is already true for this app the moment it is saved — the only thing
+  /// missing was a moment when mobile asked again. Switching tabs already
+  /// refetches (the wrapper's AnimatedSwitcher disposes the old screen, so
+  /// initState runs afresh), and pull-to-refresh covers a deliberate check.
+  /// Coming back from the background was the gap: the screen was left holding
+  /// whatever it fetched before the phone was locked.
+  ///
+  /// Mirrors DashboardScreen, which has done this since the display-name fix.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    _loadData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }

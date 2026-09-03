@@ -17,7 +17,12 @@ class AdminDashboardProvider extends ChangeNotifier {
   int _totalElders   = 0;
   int _activeNurses  = 0;
   int _alertsToday   = 0;
-  int _camerasOnline = 2;
+  // Nullable, and it starts null. This was `int _camerasOnline = 2` with a
+  // `?? 2` fallback on the parse below, so the app claimed both cameras were
+  // online before it had asked anything, and again whenever the answer was
+  // missing. "I don't know" and "everything is fine" are different states and
+  // a monitoring product must never round the first into the second.
+  int? _camerasOnline;
 
   int? _eldersDelta;
   int? _nursesDelta;
@@ -42,7 +47,9 @@ class AdminDashboardProvider extends ChangeNotifier {
   int  get totalElders   => _totalElders;
   int  get activeNurses  => _activeNurses;
   int  get alertsToday   => _alertsToday;
-  int  get camerasOnline => _camerasOnline;
+  /// Cameras confirmed to be delivering frames, or null when the AI core
+  /// could not be reached. Null means UNKNOWN — never render it as a number.
+  int? get camerasOnline => _camerasOnline;
 
   int?    get eldersDelta  => _eldersDelta;
   int?    get nursesDelta  => _nursesDelta;
@@ -145,7 +152,7 @@ class AdminDashboardProvider extends ChangeNotifier {
       _totalElders   = (eldersData['current']  as num?)?.toInt() ?? 0;
       _activeNurses  = (nursesData['current']  as num?)?.toInt() ?? 0;
       _alertsToday   = (alertsData['current']  as num?)?.toInt() ?? 0;
-      _camerasOnline = (camerasData['online']  as num?)?.toInt() ?? 2;
+      _camerasOnline = (camerasData['online']  as num?)?.toInt();
 
       _eldersDelta = (eldersData['delta'] as num?)?.toInt();
       _nursesDelta = (nursesData['delta'] as num?)?.toInt();
@@ -193,7 +200,9 @@ class AdminDashboardProvider extends ChangeNotifier {
       debugPrint('Dashboard Error: $e');
       _errorMessage  = 'Secure connection timeout. Verify network status.';
       _totalElders   = 0; _activeNurses = 0; _alertsToday = 0;
-      _camerasOnline = 0; _recentActivities = [];
+      // Null, not 0. The request failed, so we know nothing about the
+      // cameras — reporting zero online would be as wrong as reporting two.
+      _camerasOnline = null; _recentActivities = [];
     } finally {
       _isLoading = false;
       notifyListeners();

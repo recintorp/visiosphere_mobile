@@ -26,7 +26,8 @@ class AdminEldersScreen extends StatefulWidget {
   State<AdminEldersScreen> createState() => _AdminEldersScreenState();
 }
 
-class _AdminEldersScreenState extends State<AdminEldersScreen> {
+class _AdminEldersScreenState extends State<AdminEldersScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
 
   /// Houses for the signed-in user's facility.
@@ -51,23 +52,48 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
     super.initState();
     _houses = Facilities.housesFor(context.read<AuthProvider>().facility);
     _showHouse = _houses.length > 1;
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final authProvider = context.read<AuthProvider>();
-        final dashboardProvider = context.read<AdminDashboardProvider>();
-        
-        bool isSimulatingAdmin = widget.isNurseView && authProvider.userRole == 'Facility Admin';
-
-        context.read<AdminEldersProvider>().fetchResidents(
-          userRole: isSimulatingAdmin ? 'Nurse' : authProvider.userRole,
-          userId: isSimulatingAdmin ? dashboardProvider.nurseId : authProvider.userId,
-        );
-      }
+      if (mounted) _loadData();
     });
+  }
+
+  /// The one place this screen loads its data, so the first load and every
+  /// refresh can never drift apart.
+  void _loadData() {
+    final authProvider = context.read<AuthProvider>();
+    final dashboardProvider = context.read<AdminDashboardProvider>();
+
+    final bool isSimulatingAdmin =
+        widget.isNurseView && authProvider.userRole == 'Facility Admin';
+
+    context.read<AdminEldersProvider>().fetchResidents(
+      userRole: isSimulatingAdmin ? 'Nurse' : authProvider.userRole,
+      userId: isSimulatingAdmin ? dashboardProvider.nurseId : authProvider.userId,
+    );
+  }
+
+  /// Look again every time the app comes back to the foreground.
+  ///
+  /// Web and mobile share one backend, so a record added or edited in a browser
+  /// is already true for this app the moment it is saved — the only thing
+  /// missing was a moment when mobile asked again. Switching tabs already
+  /// refetches (the wrapper's AnimatedSwitcher disposes the old screen, so
+  /// initState runs afresh), and pull-to-refresh covers a deliberate check.
+  /// Coming back from the background was the gap: the screen was left holding
+  /// whatever it fetched before the phone was locked.
+  ///
+  /// Mirrors DashboardScreen, which has done this since the display-name fix.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    _loadData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -339,9 +365,15 @@ class _AdminEldersScreenState extends State<AdminEldersScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: widget.isNurseView 
-        ? null 
-        : FloatingActionButton.extended(
+      // Nurses may create resident records. The web has always allowed this —
+      // frontend/src/pages/EldersDashboard.jsx renders "Add New Resident" with
+      // no role check — and mobile hid it, so a nurse had no way to create the
+      // record she was then expected to edit and validate.
+      //
+      // The nurse gate that IS deliberate lives on Delete: BulkActionBar.jsx
+      // withholds it from nurses on the web. See the note in the guardians
+      // screen; the same rule applies here.
+      floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showAddResidentModal(context, isDark),
             backgroundColor: const Color(0xFF00A8E8),
             elevation: 6,

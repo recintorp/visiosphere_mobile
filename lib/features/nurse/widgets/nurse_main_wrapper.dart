@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/facilities.dart';
 import '../../admin/screens/dashboard_screen.dart';
 import '../../admin/screens/admin_elders_screen.dart';
 import '../../admin/screens/admin_guardians_screen.dart';
@@ -377,7 +378,16 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
             ),
             childrenPadding: const EdgeInsets.only(bottom: 8.0),
             children: [
-              _buildDrawerSubItem(Icons.elderly_rounded, 'Assigned Elders',
+              // "Assigned Elders" is only true where residents are assigned
+              // one by one. A Saint Anthony nurse sees every resident in the
+              // facility, so the label would promise a filter that is not
+              // applied. See Facilities.assignsEldersToNurses.
+              _buildDrawerSubItem(
+                  Icons.elderly_rounded,
+                  Facilities.assignsEldersToNurses(
+                          context.read<AuthProvider>().facility)
+                      ? 'Assigned Elders'
+                      : 'Residents',
                   isSelected: _currentIndex == 1, isDark: isDark,
                   onTap: () => switchScreen(1)),
               _buildDrawerSubItem(Icons.family_restroom_rounded, 'Guardians',

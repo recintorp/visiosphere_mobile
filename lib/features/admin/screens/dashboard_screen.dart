@@ -7,6 +7,7 @@ import '../widgets/dashboard_stat_card.dart';
 import '../widgets/dashboard_stats_row.dart';
 import '../widgets/dashboard_chart_card.dart';
 import '../widgets/recent_weeks_strip.dart';
+import '../../../core/constants/facilities.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../cctv/providers/cctv_provider.dart';
 import '../../cctv/widgets/alerts_sheet.dart';
@@ -144,7 +145,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     isNurseView:  widget.isNurseView,
                                     eldersValue:  dashboard.totalElders.toString().padLeft(2, '0'),
                                     nursesValue:  dashboard.activeNurses.toString().padLeft(2, '0'),
-                                    camerasValue: dashboard.camerasOnline.toString().padLeft(2, '0'),
+                                    camerasValue: _cameraStatData(dashboard)
+                                        .current
+                                        .toString()
+                                        .padLeft(2, '0'),
                                     alertsValue:  dashboard.alertsToday.toString().padLeft(2, '0'),
                                     eldersStat:   _statData(dashboard, 'elders'),
                                     nursesStat:   _statData(dashboard, 'nurses'),
@@ -205,12 +209,37 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   StatCardData _cameraStatData(AdminDashboardProvider d) {
+    // COMPUTED HERE, NOT FETCHED. This used to read the camera count off the
+    // dashboard-stats response, and the server was returning a hardcoded
+    // "2 of 2" — so the header claimed both cameras were fine on a facility
+    // that has one working camera, and disagreed with the CCTV Hub two taps
+    // away, which had always got it right.
+    //
+    // The Hub is right because it asks the only thing that actually knows the
+    // answer on this device: the facility's own camera list. A tile backed by
+    // a real ai_core feed is Active; a tile that is a placeholder for hardware
+    // nobody has installed yet is not. That is a local fact and there is no
+    // reason to make a network round trip for it, let alone to trust a second
+    // source that can drift from the first.
+    //
+    // Deliberately the SAME expression as CctvAnalyticsScreen's ACTIVE pill,
+    // so the two screens cannot disagree again.
+    //
+    // WHAT THIS IS NOT: live health. It counts cameras CONFIGURED with a feed,
+    // not cameras delivering frames this second — a camera that is unplugged
+    // right now still counts. ai_core's /status reports true liveness and the
+    // backend now proxies it; wiring that in is a deliberate next step, not
+    // something to leave a wrong number standing for.
+    final cams   = Facilities.camerasFor(context.read<AuthProvider>().facility);
+    final total  = cams.length;
+    final online = cams.where((c) => c.status == 'Active').length;
+
     return StatCardData(
-      current:      d.camerasOnline,
+      current:      online,
       direction:    TrendDirection.none,
-      cameraOnline: d.camerasOnline,
-      cameraTotal:  2,
-      label:        '${d.camerasOnline} / 2 online',
+      cameraOnline: online,
+      cameraTotal:  total,
+      label:        '$online / $total online',
     );
   }
 

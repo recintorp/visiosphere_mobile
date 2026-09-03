@@ -19,24 +19,49 @@ class AdminGuardiansScreen extends StatefulWidget {
   State<AdminGuardiansScreen> createState() => _AdminGuardiansScreenState();
 }
 
-class _AdminGuardiansScreenState extends State<AdminGuardiansScreen> {
+class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _selectedGuardians = {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final provider = context.read<AdminGuardiansProvider>();
-        provider.fetchGuardians();
-        provider.fetchResidents();
-      }
+      if (mounted) _loadData();
     });
+  }
+
+  /// The one place this screen loads its data, so the first load and every
+  /// refresh can never drift apart.
+  void _loadData() {
+    final provider = context.read<AdminGuardiansProvider>();
+    provider.fetchGuardians();
+    provider.fetchResidents();
+  }
+
+  /// Look again every time the app comes back to the foreground.
+  ///
+  /// Web and mobile share one backend, so a record added or edited in a browser
+  /// is already true for this app the moment it is saved — the only thing
+  /// missing was a moment when mobile asked again. Switching tabs already
+  /// refetches (the wrapper's AnimatedSwitcher disposes the old screen, so
+  /// initState runs afresh), and pull-to-refresh covers a deliberate check.
+  /// Coming back from the background was the gap: the screen was left holding
+  /// whatever it fetched before the phone was locked.
+  ///
+  /// Mirrors DashboardScreen, which has done this since the display-name fix.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (!mounted) return;
+    _loadData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
@@ -89,9 +114,15 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: widget.isNurseView 
-        ? null 
-        : FloatingActionButton.extended(
+      // Nurses may provision guardian accounts. The web has always allowed this
+      // (frontend/src/pages/GuardianDashboard.jsx renders the same button with
+      // no role check); mobile hid it, so a nurse had no way to create the
+      // account she was then expected to edit and validate.
+      //
+      // DELETE stays hidden for nurses further down — that gate is deliberate
+      // and matches GuardianBulkActionBar.jsx, which also shows Edit to a nurse
+      // and withholds Delete. Do not "fix" that one to match this.
+      floatingActionButton: FloatingActionButton.extended(
             onPressed: _showProvisionModal,
             backgroundColor: const Color(0xFF00A8E8),
             elevation: 6,

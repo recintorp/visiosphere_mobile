@@ -126,6 +126,33 @@ class Facilities {
   /// single-house facility gets the right behaviour for free.
   static bool hasHouseChoice(String? facility) => housesFor(facility).length > 1;
 
+  // ---------------------------------------------------------------------
+  // Nurse -> resident assignment
+  // ---------------------------------------------------------------------
+  /// Whether this facility assigns individual residents to individual nurses.
+  ///
+  /// Grace's does: it is split across six houses and a nurse carries a named
+  /// caseload, so "which residents are mine" is real information.
+  ///
+  /// Saint Anthony does not. It is a single building with one shared floor of
+  /// residents, and every nurse on shift is responsible for all of them — so an
+  /// assignment step there is bookkeeping that changes nothing, and a nurse who
+  /// happened not to be assigned would be locked out of residents she is caring
+  /// for. Saint Anthony nurses see every resident in the facility instead.
+  ///
+  /// This is an explicit policy list, NOT derived from the house count. The two
+  /// happen to agree today, but "has more than one house" and "tracks a per-
+  /// nurse caseload" are different questions, and a future facility could
+  /// answer them differently.
+  static const Set<String> _assignsEldersToNurses = {graces};
+
+  /// True when this facility assigns residents to nurses one by one.
+  ///
+  /// Unknown facilities return false: showing an assignment UI that the backend
+  /// may reject is worse than not offering it.
+  static bool assignsEldersToNurses(String? facility) =>
+      facility != null && _assignsEldersToNurses.contains(facility);
+
   /// The house to stamp on a new record when there is no choice to offer.
   /// Null when the facility genuinely has several (the user must pick) or is
   /// unknown.

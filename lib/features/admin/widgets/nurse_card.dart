@@ -18,14 +18,26 @@ class NurseCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final String nurseId = nurse['nurseId'] ?? 'N/A';
+    // The roster prints the nurse's own Display Name when she has set one.
+    // resolveName prefers the server-resolved `profileName` (see
+    // backend/models/Nurse.js) and falls back to the legal name, so a nurse who
+    // has never renamed herself looks exactly as she did before.
+    //
+    // Her legal name is still shown on the Staff Details screen, which is where
+    // an admin verifies or edits the staff record.
     final String firstName = nurse['firstName'] ?? '';
-    final String lastName = nurse['lastName'] ?? '';
-    final String fullName = '$firstName $lastName';
+    final String fullName = AuthProvider.resolveName(nurse);
     final String house = nurse['houseAssigned']?.replaceAll('House of ', '') ?? 'Unassigned';
     final bool showHouse =
         Facilities.hasHouseChoice(context.read<AuthProvider>().facility);
     final String status = nurse['status'] ?? 'Inactive';
     final int assignedCount = (nurse['assignedElders'] as List?)?.length ?? 0;
+    // Saint Anthony does not assign residents to nurses, so "0 Elders" there
+    // would read as a problem with the record rather than a fact about the
+    // facility. See Facilities.assignsEldersToNurses.
+    final bool showAssignedCount = Facilities.assignsEldersToNurses(
+        Facilities.facilityOf(nurse['nurseId'])
+            ?? context.read<AuthProvider>().facility);
     
     final bool isFirstLogin = nurse['isFirstLogin'] ?? false;
     final String? linkedAdminId = nurse['linkedAdminId'];
@@ -64,7 +76,9 @@ class NurseCard extends StatelessWidget {
     }
 
     // Avatar Initial
-    final String initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'N';
+    final String initial = fullName.isNotEmpty
+        ? fullName[0].toUpperCase()
+        : (firstName.isNotEmpty ? firstName[0].toUpperCase() : 'N');
 
     return GestureDetector(
       onTap: onTap,
@@ -262,6 +276,9 @@ class NurseCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                  if (!showAssignedCount)
+                    const SizedBox.shrink()
+                  else
                   Row(
                     children: [
                       Icon(Icons.people_alt_rounded, size: 16, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),

@@ -92,7 +92,22 @@ class AdminEldersProvider extends ChangeNotifier {
     await loadHouses();
 
     try {
-      if (userRole == 'Nurse' && userId != null) {
+      // WHERE A NURSE'S RESIDENT LIST COMES FROM.
+      //
+      // At Grace's a nurse carries a named caseload, so her list is exactly the
+      // residents assigned to her. At Saint Anthony there is no assignment step
+      // at all — one building, one shared floor, every nurse on shift
+      // responsible for everyone — so her list is every resident the facility
+      // has. The backend already scopes that query to her facility
+      // (models/plugins/facilityScope.js), so "all residents" can never mean
+      // another facility's residents.
+      //
+      // This also brings mobile in line with the web, where EldersDashboard.jsx
+      // has always called getAllResidents() regardless of role.
+      final assignsElders = Facilities.assignsEldersToNurses(
+          Facilities.facilityOf(userId));
+
+      if (userRole == 'Nurse' && userId != null && assignsElders) {
         final nurseData = await _nurseService.getNurseProfile(userId);
         _residents = nurseData['assignedElders'] ?? [];
       } else {

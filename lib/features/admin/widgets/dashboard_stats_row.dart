@@ -103,8 +103,16 @@ class _AlertHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The hero card reports ALERTS. It used to also raise a "Camera Issue"
+    // whenever online < total, which is wrong here: the camera list includes
+    // placeholder tiles for hardware that has not been installed yet, so
+    // online < total is the NORMAL, permanent state at both facilities and
+    // the card would have warned for ever about nothing.
+    //
+    // The count still shows in the subtext, where it is information. Bringing
+    // a real warning back needs real liveness — ai_core's /status, which knows
+    // whether frames are arriving — not a comparison of two config numbers.
     final hasAlerts = alertsCount > 0;
-    final camIssue  = camsTotal > 0 && camsOnline < camsTotal;
 
     final Color bg;
     final Color borderCol;
@@ -126,16 +134,6 @@ class _AlertHeroCard extends StatelessWidget {
       heroIcon   = Icons.warning_amber_rounded;
       titleText  = '$alertsCount Active Alert${alertsCount > 1 ? 's' : ''}';
       subText    = 'Immediate attention required';
-    } else if (camIssue) {
-      bg         = isDark ? const Color(0xFF1C1200) : const Color(0xFFFFFBEB);
-      borderCol  = isDark ? const Color(0xFF92400E).withValues(alpha: 0.5) : const Color(0xFFFDE68A);
-      iconBg     = isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7);
-      iconColor  = const Color(0xFFF59E0B);
-      titleColor = isDark ? const Color(0xFFFCD34D) : const Color(0xFFB45309);
-      subColor   = isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.7) : const Color(0xFFD97706).withValues(alpha: 0.8);
-      heroIcon   = Icons.videocam_off_rounded;
-      titleText  = 'Camera Issue Detected';
-      subText    = '$camsOnline of $camsTotal cameras online';
     } else {
       bg         = isDark ? const Color(0xFF00212E) : const Color(0xFFEEF7FC);
       borderCol  = isDark ? const Color(0xFF00435C) : const Color(0xFFB8DFF0);

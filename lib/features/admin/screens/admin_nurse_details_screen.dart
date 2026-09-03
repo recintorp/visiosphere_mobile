@@ -32,11 +32,26 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
   bool get _showHouse =>
       Facilities.hasHouseChoice(context.read<AuthProvider>().facility);
 
+  /// Whether this nurse's facility assigns residents one by one.
+  ///
+  /// Read from the NURSE's own id prefix, not the signed-in admin's facility.
+  /// The two always agree today because an admin only ever sees nurses from
+  /// their own facility, but the question being asked is about the nurse, and
+  /// answering it from her own record cannot drift.
+  bool get _assignsElders => Facilities.assignsEldersToNurses(
+      Facilities.facilityOf(_currentNurse['nurseId'])
+          ?? context.read<AuthProvider>().facility);
+
   @override
   void initState() {
     super.initState();
     _currentNurse = widget.nurse;
-    _fetchElders();
+    // Only the assignment picker consumes this list, so a facility that does
+    // not assign should not pay for the request.
+    if (Facilities.assignsEldersToNurses(
+        Facilities.facilityOf(_currentNurse['nurseId']))) {
+      _fetchElders();
+    }
   }
 
   @override
@@ -150,7 +165,7 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => DeleteNurseDialog(
-        nurseName: '${_currentNurse['firstName']} ${_currentNurse['lastName']}',
+        nurseName: AuthProvider.resolveName(_currentNurse),
         onConfirm: () async {
           final dialogNavigator = Navigator.of(dialogContext);
           final nurseId = _currentNurse['nurseId'];
@@ -483,10 +498,20 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // The heading prints the nurse's chosen Display Name, matching the roster.
+    // `legalName` is the name on the staff record, and it is shown underneath
+    // whenever the two differ — this screen is where an admin verifies who a
+    // nurse actually is, so the Display Name must not be the only name here.
     final String firstName = _currentNurse['firstName'] ?? '';
     final String lastName = _currentNurse['lastName'] ?? '';
-    final String fullName = '$firstName $lastName';
-    final String initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'N';
+    final String legalName = [firstName, lastName]
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .join(' ');
+    final String fullName = AuthProvider.resolveName(_currentNurse);
+    final String initial = fullName.isNotEmpty
+        ? fullName[0].toUpperCase()
+        : (firstName.isNotEmpty ? firstName[0].toUpperCase() : 'N');
     final List<dynamic> assignedElders = _currentNurse['assignedElders'] ?? [];
     
     return Scaffold(
@@ -592,6 +617,15 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                     fullName,
                     style: TextStyle(fontFamily: 'Montserrat', fontSize: 24, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A), letterSpacing: -0.5),
                   ),
+                  // Only when she has renamed herself — for everyone else this
+                  // would just print the heading twice.
+                  if (legalName.isNotEmpty && legalName != fullName) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Staff record: $legalName',
+                      style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -615,184 +649,217 @@ class _AdminNurseDetailsScreenState extends State<AdminNurseDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Assigned Residents',
-                          style: TextStyle(fontFamily: 'Montserrat', fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: assignedElders.length >= 10 
-                              ? (isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2)) 
-                              : (isDark ? const Color(0xFF082F49).withValues(alpha: 0.3) : const Color(0xFFE8F4FD)),
-                            borderRadius: BorderRadius.circular(20),
+                    // Resident assignment is a Grace's concept. Saint Anthony is one
+                    // building where every nurse on shift is responsible for every
+                    // resident, so there is nothing to assign — see
+                    // Facilities.assignsEldersToNurses.
+                    if (_assignsElders) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Assigned Residents',
+                            style: TextStyle(fontFamily: 'Montserrat', fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                           ),
-                          child: Text(
-                            '${assignedElders.length} / 10',
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                              color: assignedElders.length >= 10 ? const Color(0xFFE11D48) : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: assignedElders.length >= 10 
+                                ? (isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2)) 
+                                : (isDark ? const Color(0xFF082F49).withValues(alpha: 0.3) : const Color(0xFFE8F4FD)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${assignedElders.length} / 10',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                                color: assignedElders.length >= 10 ? const Color(0xFFE11D48) : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0066CC)),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
                     
-                    if (assignedElders.isEmpty)
+                      if (assignedElders.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.people_outline_rounded, size: 42, color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                              const SizedBox(height: 12),
+                              Text('No elders assigned.', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        )
+                      else
+                        ...assignedElders.map((elder) => FadeInLeft(
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                              border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${elder['firstName']} ${elder['lastName']}',
+                                      style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      elder['residentId'] ?? elder['_id'],
+                                      style: TextStyle(fontFamily: 'monospace', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () => _handleRemove(elder['_id']),
+                                    icon: const Icon(Icons.remove_circle_outline_rounded, color: Color(0xFFE11D48)),
+                                    tooltip: 'Unassign',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
+
+                      const SizedBox(height: 32),
+                      Divider(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      const SizedBox(height: 24),
+
+                      Text(
+                        'Available Directory',
+                        style: TextStyle(fontFamily: 'Montserrat', fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 16),
+                    
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(32),
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 16, offset: const Offset(0, 4))],
                           border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
                         ),
+                        child: TextField(
+                          controller: _elderSearchCtrl,
+                          onChanged: (val) => setState(() {}),
+                          style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                          decoration: InputDecoration(
+                            hintText: 'Search by name or ID...',
+                            hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
+                            prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      if (_isLoadingElders)
+                        const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator(color: Color(0xFF00A8E8))))
+                      else
+                        ..._availableElders.where((e) {
+                          final isAlreadyAssigned = assignedElders.any((assigned) => assigned['_id'] == e['_id']);
+                          if (isAlreadyAssigned) return false;
+                        
+                          final search = _elderSearchCtrl.text.toLowerCase();
+                          if (search.isEmpty) return true;
+                        
+                          final name = '${e['firstName']} ${e['lastName']}'.toLowerCase();
+                          return name.contains(search);
+                        }).map((elder) => FadeInUp(
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                              border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${elder['firstName']} ${elder['lastName']}',
+                                      style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      elder['residentId'] ?? elder['_id'],
+                                      style: TextStyle(fontFamily: 'monospace', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                                ElevatedButton(
+                                  onPressed: assignedElders.length >= 10 ? null : () => _handleAssign(elder),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? const Color(0xFF00A8E8) : const Color(0xFF0066CC),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                  ),
+                                  child: const Text('Assign', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
+                    ] else
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.people_outline_rounded, size: 42, color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
-                            const SizedBox(height: 12),
-                            Text('No elders assigned.', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
+                            Row(
+                              children: [
+                                Icon(Icons.groups_rounded, size: 20, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                                const SizedBox(width: 10),
+                                Text('Residents', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'This nurse is responsible for every resident in the facility. '
+                              'Residents are not assigned individually here.',
+                              style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, height: 1.5, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                            ),
                           ],
                         ),
-                      )
-                    else
-                      ...assignedElders.map((elder) => FadeInLeft(
-                        duration: const Duration(milliseconds: 300),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
-                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${elder['firstName']} ${elder['lastName']}',
-                                    style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    elder['residentId'] ?? elder['_id'],
-                                    style: TextStyle(fontFamily: 'monospace', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: IconButton(
-                                  onPressed: () => _handleRemove(elder['_id']),
-                                  icon: const Icon(Icons.remove_circle_outline_rounded, color: Color(0xFFE11D48)),
-                                  tooltip: 'Unassign',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )),
-
-                    const SizedBox(height: 32),
-                    Divider(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                    const SizedBox(height: 24),
-
-                    Text(
-                      'Available Directory',
-                      style: TextStyle(fontFamily: 'Montserrat', fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 16, offset: const Offset(0, 4))],
-                        border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
                       ),
-                      child: TextField(
-                        controller: _elderSearchCtrl,
-                        onChanged: (val) => setState(() {}),
-                        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                        decoration: InputDecoration(
-                          hintText: 'Search by name or ID...',
-                          hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
-                          prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    if (_isLoadingElders)
-                      const Center(child: Padding(padding: EdgeInsets.all(32.0), child: CircularProgressIndicator(color: Color(0xFF00A8E8))))
-                    else
-                      ..._availableElders.where((e) {
-                        final isAlreadyAssigned = assignedElders.any((assigned) => assigned['_id'] == e['_id']);
-                        if (isAlreadyAssigned) return false;
-                        
-                        final search = _elderSearchCtrl.text.toLowerCase();
-                        if (search.isEmpty) return true;
-                        
-                        final name = '${e['firstName']} ${e['lastName']}'.toLowerCase();
-                        return name.contains(search);
-                      }).map((elder) => FadeInUp(
-                        duration: const Duration(milliseconds: 300),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))],
-                            border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${elder['firstName']} ${elder['lastName']}',
-                                    style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 15),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    elder['residentId'] ?? elder['_id'],
-                                    style: TextStyle(fontFamily: 'monospace', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              ElevatedButton(
-                                onPressed: assignedElders.length >= 10 ? null : () => _handleAssign(elder),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? const Color(0xFF00A8E8) : const Color(0xFF0066CC),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                ),
-                                child: const Text('Assign', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )),
                   ],
                 ),
               ),

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../nurse/services/nurse_api_service.dart';
 import '../../residents/services/resident_api_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 /// Pull the backend's own explanation out of a failure.
 ///
@@ -38,9 +39,11 @@ class AdminNursesProvider extends ChangeNotifier {
 
   List<dynamic> get nurses {
     var filtered = _nurses.where((nurse) {
-      final firstName = nurse['firstName'] ?? '';
-      final lastName = nurse['lastName'] ?? '';
-      final fullName = '$firstName $lastName'.toLowerCase();
+      // Searching and sorting run on the SAME name the card prints. Filtering
+      // on the legal name while showing the Display Name means typing the name
+      // you can see returns nothing, and the list sorts in an order that looks
+      // random on screen.
+      final fullName = AuthProvider.resolveName(nurse).toLowerCase();
       final nurseId = (nurse['nurseId'] ?? '').toLowerCase();
       final searchLower = _searchTerm.toLowerCase();
 
@@ -51,9 +54,9 @@ class AdminNursesProvider extends ChangeNotifier {
     }).toList();
 
     if (_sortOrder == 'asc') {
-      filtered.sort((a, b) => ('${a['firstName']} ${a['lastName']}').toLowerCase().compareTo(('${b['firstName']} ${b['lastName']}').toLowerCase()));
+      filtered.sort((a, b) => AuthProvider.resolveName(a).toLowerCase().compareTo(AuthProvider.resolveName(b).toLowerCase()));
     } else if (_sortOrder == 'desc') {
-      filtered.sort((a, b) => ('${b['firstName']} ${b['lastName']}').toLowerCase().compareTo(('${a['firstName']} ${a['lastName']}').toLowerCase()));
+      filtered.sort((a, b) => AuthProvider.resolveName(b).toLowerCase().compareTo(AuthProvider.resolveName(a).toLowerCase()));
     }
 
     return filtered;
