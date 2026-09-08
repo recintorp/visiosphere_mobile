@@ -33,13 +33,13 @@ class GuardianCard extends StatelessWidget {
     Color statusBgColor;
 
     switch (status) {
-      case 'ACTIVE':
-        statusColor = isDark ? const Color(0xFF34D399) : const Color(0xFF10B981); 
-        statusBgColor = isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFF0FDF4);
-        break;
       case 'INACTIVE':
         statusColor = isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48); 
         statusBgColor = isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2);
+        break;
+      case 'ACTIVE':
+        statusColor = isDark ? const Color(0xFF34D399) : const Color(0xFF10B981); 
+        statusBgColor = isDark ? const Color(0xFF064E3B).withValues(alpha: 0.3) : const Color(0xFFF0FDF4);
         break;
       case 'PENDING':
       default:

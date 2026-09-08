@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'core/network/dio_client.dart';
 import 'core/routes/app_router.dart';
+import 'core/services/secure_storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/admin/providers/admin_assessments_provider.dart';
@@ -38,6 +39,29 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  final data = message.data;
+
+  // THIS HANDLER DRAWS CCTV INCIDENTS AND NOTHING ELSE.
+  //
+  // It used to draw every push that reached the device. The two incident
+  // dispatches (backend/services/notificationService.js) are data-only
+  // messages — no `notification` block — so Android shows nothing for them and
+  // this handler has to build the notification itself. The assessment
+  // dispatches (backend/services/assessmentNotificationHelper.js) are the
+  // opposite: they carry a `notification` block that Android displays on its
+  // own, plus data holding only `_id`/`type`/`residentId`/`assessmentId`.
+  //
+  // So a posted Daily Journal arrived here with no `title` and no `body`, fell
+  // through to the fallbacks below, and was drawn a SECOND time as
+  // "VisionSphere Alert — New incident detected" beside the real journal
+  // notification. A phantom emergency, every time a nurse filed a journal.
+  //
+  // `incidentId` is the field that separates them: both incident dispatches
+  // set it, neither assessment dispatch does. Without it there is no incident
+  // to announce, and Android has already shown whatever the message carried.
+  final incidentId = data['incidentId']?.toString() ?? '';
+  if (incidentId.isEmpty) return;
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   const AndroidInitializationSettings androidSettings =
@@ -50,13 +74,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(_alertChannel);
 
-  final data = message.data;
   final title = data['title'] ?? 'VisionSphere Alert';
   final body = data['body'] ?? data['location'] ?? 'New incident detected';
   final severity = data['severity'] ?? 'Warning';
 
   await flutterLocalNotificationsPlugin.show(
-    data['incidentId']?.hashCode ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    incidentId.hashCode,
     title,
     body,
     NotificationDetails(
@@ -71,8 +94,46 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         fullScreenIntent: severity == 'Emergency',
       ),
     ),
-    payload: data['incidentId'],
+    payload: incidentId,
   );
+}
+
+/// Where a tapped incident notification lands.
+///
+/// This was `appRouter.go('/admin')` — a location the router has never
+/// defined. core/routes/app_router.dart declares `/admin-home`, `/nurse-home`,
+/// `/guardian-home`, `/admin/alert-history` and `/nurse/alert-history`; there
+/// is no `/admin`. So every staff member who tapped an alert from the tray
+/// landed on "Page Not Found — GoException: no routes for location: /admin".
+///
+/// Only staff are sent incident pushes (notificationService.js dispatches to
+/// admin and nurse tokens), and each role has its own alert history route, so
+/// the destination has to be chosen from the signed-in role rather than
+/// hardcoded. The role's home goes down first and alert history on top of it:
+/// AlertHistoryScreen's back button calls context.pop(), which needs something
+/// underneath it or a tap that cold-starts the app strands the user on a
+/// screen they cannot leave.
+Future<void> _openAlertHistoryForSignedInRole() async {
+  final role = await SecureStorageService.getUserRole();
+
+  switch (role) {
+    case 'Facility Admin':
+      appRouter.go('/admin-home');
+      appRouter.push('/admin/alert-history');
+      break;
+    case 'Nurse':
+      appRouter.go('/nurse-home');
+      appRouter.push('/nurse/alert-history');
+      break;
+    case 'Guardian':
+      // Guardians are not sent incident pushes; if one ever reaches a guardian
+      // handset there is no alert history for them to open.
+      appRouter.go('/guardian-home');
+      break;
+    default:
+      // No stored role means no live session to return to.
+      appRouter.go('/login');
+  }
 }
 
 void main() async {
@@ -104,9 +165,9 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(android: androidSettings),
     onDidReceiveNotificationResponse: (NotificationResponse response) {
-      if (response.payload != null) {
-        appRouter.go('/admin');
-      }
+      final incidentId = response.payload;
+      if (incidentId == null || incidentId.isEmpty) return;
+      _openAlertHistoryForSignedInRole();
     },
   );
 

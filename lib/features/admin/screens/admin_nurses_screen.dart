@@ -99,6 +99,13 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
     // the server and came back as a flat "Failed to provision account".
     String? errorText;
 
+    // True from the moment Create Account is tapped until the server answers.
+    // Nothing marked the request as in flight before: the button stayed live
+    // (a second tap provisioned a second account) and, worse, the panel could
+    // still be dismissed out from under its own `await` — see the PopScope
+    // below.
+    bool isSubmitting = false;
+
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -106,7 +113,15 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
+        // Locked shut while the account is being created. A bottom sheet has
+        // two exits no button controls — a tap on the barrier above it and a
+        // downward drag — and taking either one mid-request tore this panel
+        // down underneath its own `await`. The account was created on the
+        // server and the operator was shown a failure. Idle, the panel still
+        // dismisses normally.
+        builder: (context, setModalState) => PopScope(
+          canPop: !isSubmitting,
+          child: Container(
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -225,7 +240,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () async {
+                  onPressed: isSubmitting ? null : () async {
                     final firstName = firstNameCtrl.text.trim();
                     final lastName  = lastNameCtrl.text.trim();
                     final email     = emailCtrl.text.trim();
@@ -243,7 +258,10 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                       return;
                     }
 
-                    setModalState(() => errorText = null);
+                    setModalState(() {
+                      errorText = null;
+                      isSubmitting = true;
+                    });
 
                     // Captured before the await: reading a provider off
                     // `context` after an async gap is unsafe.
@@ -258,6 +276,9 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                     });
                     if (!context.mounted) return;
                     if (success) {
+                      // Released before the pop, never after: the panel is gone
+                      // by then and setModalState would fire on a dead State.
+                      setModalState(() => isSubmitting = false);
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Account provisioned successfully', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFF10B981)),
@@ -266,8 +287,10 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                       // The provider now carries the backend's own explanation —
                       // a duplicate email, an expired session — instead of the
                       // one flat sentence that hid all of them.
-                      setModalState(() =>
-                          errorText = nursesProvider.errorMessage ?? 'Failed to provision account.');
+                      setModalState(() {
+                        errorText = nursesProvider.errorMessage ?? 'Failed to provision account.';
+                        isSubmitting = false;
+                      });
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -275,15 +298,18 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Create Account',
-                    style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                  child: isSubmitting
+                    ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text(
+                        'Create Account',
+                        style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
                 ),
               ),
             ],
             ),
           ),
+        ),
         ),
       ),
     );

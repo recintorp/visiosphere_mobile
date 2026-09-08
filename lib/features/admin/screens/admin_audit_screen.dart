@@ -346,13 +346,24 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                         child: IconButton(
                           icon: const Icon(Icons.download_rounded, color: Colors.white),
                           onPressed: () async {
-                            final path = await provider.exportToCSV();
-                            if (context.mounted) {
-                              if (path != null) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved to: $path', style: const TextStyle(fontFamily: 'Montserrat')), backgroundColor: const Color(0xFF10B981)));
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to export CSV or list is empty.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
-                              }
+                            final result = await provider.exportToCSV();
+                            if (!context.mounted) return;
+
+                            // Four outcomes, four messages. Backing out of the
+                            // save dialog is a choice, not a failure, and used
+                            // to be announced as one.
+                            switch (result.status) {
+                              case AuditExportStatus.saved:
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audit trail saved to ${result.path}', style: const TextStyle(fontFamily: 'Montserrat')), backgroundColor: const Color(0xFF10B981)));
+                                break;
+                              case AuditExportStatus.cancelled:
+                                break;
+                              case AuditExportStatus.empty:
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nothing to export — no logs match the current filters.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
+                                break;
+                              case AuditExportStatus.failed:
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to export the audit trail.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
+                                break;
                             }
                           },
                         ),

@@ -19,6 +19,12 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
   late TextEditingController _phoneCtrl;
   late String _selectedGender;
   late String _selectedStatus;
+
+  /// Account Status is the system's until the guardian has set their password.
+  /// Provisioning writes PENDING; guardianAuthService.setPassword() moves it to
+  /// ACTIVE on its own. Until then the admin cannot touch it — and the backend
+  /// refuses the change too, so this is a courtesy, not the enforcement.
+  bool get _setupPending => widget.guardian['isPasswordSet'] != true;
   bool _isSaving = false;
 
   /// Validation and failure text, shown INSIDE this panel rather than as a
@@ -34,7 +40,7 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
     _emailCtrl = TextEditingController(text: widget.guardian['email'] ?? '');
     _phoneCtrl = TextEditingController(text: widget.guardian['phone'] ?? '');
     _selectedGender = widget.guardian['gender'] ?? '';
-    _selectedStatus = widget.guardian['status']?.toUpperCase() ?? 'PENDING';
+    _selectedStatus = widget.guardian['status']?.toString().toUpperCase() ?? 'PENDING';
   }
 
   @override
@@ -280,17 +286,41 @@ class _EditGuardianModalState extends State<EditGuardianModal> {
                   isExpanded: true,
                   dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                   value: _selectedStatus,
-                  icon: Icon(Icons.keyboard_arrow_down, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                  icon: Icon(Icons.keyboard_arrow_down,
+                      color: _setupPending
+                          ? (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1))
+                          : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))),
                   style: TextStyle(fontFamily: 'Montserrat', color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
-                  items: const [
-                    DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                    DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
-                    DropdownMenuItem(value: 'PENDING', child: Text('PENDING')),
+                  items: [
+                    // PENDING is offered only so the disabled control has a
+                    // value to display — DropdownButton asserts when `value` is
+                    // absent from `items`. It is never selectable: the field is
+                    // locked while setup is outstanding.
+                    if (_setupPending)
+                      const DropdownMenuItem(value: 'PENDING', child: Text('PENDING')),
+                    const DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
+                    const DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
                   ],
-                  onChanged: (val) => setState(() => _selectedStatus = val!),
+                  // A null onChanged is what disables a DropdownButton.
+                  onChanged: _setupPending
+                      ? null
+                      : (val) => setState(() => _selectedStatus = val!),
                 ),
               ),
             ),
+            if (_setupPending)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 4),
+                child: Text(
+                  'Set automatically — becomes Active once this guardian sets their password.',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
 
             if (_errorText != null) _buildErrorBanner(isDark),
             const SizedBox(height: 32),

@@ -167,7 +167,19 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    // Locked shut while the account is being created.
+    //
+    // The Cancel button already refused to close the panel mid-save
+    // (`_isSaving ? null : ...`), but a bottom sheet has two other exits that
+    // ignore it: a tap on the barrier above it and a downward drag. Taking
+    // either one while the request was in flight tore this widget down
+    // underneath its own `await`, and the code that resumed afterwards was
+    // left talking to a dead route — the account was created on the server and
+    // the operator was shown a failure. Blocking the pop while `_isSaving`
+    // closes both exits and leaves the panel freely dismissible when idle.
+    return PopScope(
+      canPop: !_isSaving,
+      child: Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -287,6 +299,7 @@ class _ProvisionGuardianModalState extends State<ProvisionGuardianModal> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
