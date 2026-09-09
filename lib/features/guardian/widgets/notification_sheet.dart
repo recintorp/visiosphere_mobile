@@ -106,6 +106,7 @@ class NotificationSheet extends StatelessWidget {
                   )
                 else
                   IconButton(
+                    tooltip: 'Close',
                     icon: Icon(Icons.close_rounded, color: theme.colorScheme.onSurfaceVariant),
                     onPressed: () => Navigator.pop(context),
                   ),

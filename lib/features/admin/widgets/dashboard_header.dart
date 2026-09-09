@@ -55,6 +55,9 @@ class DashboardHeader extends StatelessWidget {
         children: [
           // Hamburger
           IconButton(
+            // tooltip IS the accessibility label for an IconButton. Without it
+            // this announced only as "button".
+            tooltip: 'Open navigation menu',
             icon: Icon(
               Icons.menu_rounded,
               color: isDark ? AppColors.dashTextPrimary : const Color(0xFF00212E),
@@ -149,9 +152,26 @@ class _BellButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAlerts = unreadCount > 0;
-    return GestureDetector(
+    // Announced as an unnamed element before this: a GestureDetector carries no
+    // role and no label of its own. The count belongs IN the name so it can be
+    // heard without opening the panel.
+    final semanticLabel = hasAlerts
+        ? 'Alerts, $unreadCount unread'
+        : 'Alerts, none unread';
+    return Semantics(
+      button: true,
+      label:  semanticLabel,
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: onTap,
-      child: Stack(
+      // The circle stays 34dp; only the hit area grows to the 48dp Android
+      // minimum, which is what the Touch target finding was about.
+      child: Container(
+        width:  48,
+        height: 48,
+        alignment: Alignment.center,
+        color: Colors.transparent,
+        child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
@@ -169,9 +189,12 @@ class _BellButton extends StatelessWidget {
               ),
             ),
             child: Icon(
+              // #F87171 on its own 8%-alpha chip measures 2.56:1 — under the
+              // 3:1 WCAG asks of non-text. #DC2626 is 4.48:1 on the same chip.
+              // The chip and the badge keep the original lighter red.
               hasAlerts ? Icons.notifications_rounded : Icons.notifications_none_rounded,
               color: hasAlerts
-                  ? const Color(0xFFF87171)
+                  ? const Color(0xFFDC2626)
                   : (isDark ? const Color(0xFF4CC2EE) : const Color(0xFF00435C)),
               size: 16,
             ),
@@ -202,6 +225,8 @@ class _BellButton extends StatelessWidget {
               ),
             ),
         ],
+        ),
+      ),
       ),
     );
   }

@@ -78,10 +78,11 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
-          Image.asset('assets/images/visio.png', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+          Image.asset('assets/images/visio.png', semanticLabel: 'VisioSphere', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
           // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
           NotificationBellButton(
             color: isDark ? Colors.white : const Color(0xFF00A8E8),

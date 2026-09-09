@@ -80,7 +80,20 @@ class NurseCard extends StatelessWidget {
         ? fullName[0].toUpperCase()
         : (firstName.isNotEmpty ? firstName[0].toUpperCase() : 'N');
 
-    return GestureDetector(
+    // Accessibility Scanner reported this row three ways at once: the tap
+    // target had no label ("Item label"), the ID / name / setup-status text was
+    // painted but absent from the a11y tree ("Unexposed text"), and every row
+    // described itself identically ("Item descriptions"). One spoken node
+    // carrying the row's own values answers all three.
+    final spoken = StringBuffer('$fullName, $nurseId, $status, $setupStatusText');
+    if (showHouse) spoken.write(', house $house');
+    if (showAssignedCount) spoken.write(', $assignedCount elders assigned');
+
+    return Semantics(
+      button: true,
+      label: spoken.toString(),
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -300,6 +313,7 @@ class NurseCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

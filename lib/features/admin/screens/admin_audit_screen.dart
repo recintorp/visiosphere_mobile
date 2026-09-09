@@ -93,7 +93,8 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Filter Logs', style: TextStyle(fontFamily: 'Montserrat', fontSize: 20, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                      IconButton(icon: Icon(Icons.close, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)), onPressed: () => Navigator.pop(context)),
+                      IconButton(
+                    tooltip: 'Close',icon: Icon(Icons.close, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)), onPressed: () => Navigator.pop(context)),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -231,10 +232,11 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
-          Image.asset('assets/images/visio.png', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+          Image.asset('assets/images/visio.png', semanticLabel: 'VisioSphere', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
           // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
           NotificationBellButton(
             color: isDark ? Colors.white : const Color(0xFF00A8E8),
@@ -336,6 +338,7 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                       Container(
                         decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
                         child: IconButton(
+                          tooltip: 'Filter options',
                           icon: Icon(Icons.tune_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                           onPressed: () => _showFilterSheet(context, provider, isDark),
                         ),
@@ -344,6 +347,7 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                       Container(
                         decoration: BoxDecoration(color: const Color(0xFF00A8E8), borderRadius: BorderRadius.circular(12)),
                         child: IconButton(
+                          tooltip: 'Export logs',
                           icon: const Icon(Icons.download_rounded, color: Colors.white),
                           onPressed: () async {
                             final result = await provider.exportToCSV();

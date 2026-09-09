@@ -60,6 +60,10 @@ class MiniStatTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     const accent     = Color(0xFF00A8E8);
+    // The chip behind the icon is `accent` at 9% over white = #E8F7FD, and the
+    // icon was `accent` too — 2.47:1, under the 3:1 WCAG asks of non-text
+    // (Accessibility Scanner: "Image contrast"). Deeper icon, same chip: 4.71:1.
+    const accentIcon = Color(0xFF0075A2);
     final cardBg     = isDark ? AppColors.dashSurface : Colors.white;
     final borderCol  = isDark ? const Color(0xFF00435C) : const Color(0xFFDEEDF5);
     final labelColor = isDark ? AppColors.dashTextMuted : const Color(0xFF7A9AAD);
@@ -89,7 +93,20 @@ class MiniStatTile extends StatelessWidget {
       subLabel = '$on/$tot';
     }
 
-    return Container(
+    // One coherent announcement per tile instead of three orphan fragments.
+    final spoken = StringBuffer('$title, $value');
+    if (subLabel != null) spoken.write(', $subLabel online');
+    if (statData != null &&
+        statData!.direction != TrendDirection.none &&
+        statData!.label.isNotEmpty) {
+      spoken.write(', ${statData!.label}');
+    }
+
+    return Semantics(
+      container: true,
+      label:     spoken.toString(),
+      excludeSemantics: true,
+      child: Container(
       decoration: BoxDecoration(
         color:        cardBg,
         borderRadius: BorderRadius.circular(14),
@@ -117,7 +134,7 @@ class MiniStatTile extends StatelessWidget {
               color:        accent.withValues(alpha: isDark ? 0.15 : 0.09),
               borderRadius: BorderRadius.circular(7),
             ),
-            child: Icon(iconData, size: 13, color: accent),
+            child: Icon(iconData, size: 13, color: accentIcon),
           ),
           const SizedBox(height: 8),
           // Value
@@ -155,6 +172,7 @@ class MiniStatTile extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

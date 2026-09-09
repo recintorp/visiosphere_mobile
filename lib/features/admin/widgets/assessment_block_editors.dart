@@ -195,6 +195,7 @@ class _ChecklistBlockEditor extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Close',
                   icon: const Icon(Icons.close_rounded, color: Color(0xFFE11D48)),
                   onPressed: () {
                     final newItems = List<Map<String, dynamic>>.from(items)..removeAt(index);
@@ -346,6 +347,7 @@ class _ChartBlockEditor extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Close',
                   icon: const Icon(Icons.close_rounded, color: Color(0xFFE11D48)),
                   onPressed: () {
                     final newDp = List<Map<String, dynamic>>.from(dataPoints)..removeAt(index);

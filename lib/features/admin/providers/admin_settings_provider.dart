@@ -17,6 +17,7 @@ class AdminSettingsProvider extends ChangeNotifier {
   String? _saveMessage;
 
   String _displayName = '';
+  String _email = '';
   String _theme = 'default';
   bool _is2FAEnabled = false;
   String _linkedNurseId = '';
@@ -30,6 +31,9 @@ class AdminSettingsProvider extends ChangeNotifier {
   String? get saveMessage => _saveMessage;
 
   String get displayName => _displayName;
+  /// The address password-reset codes are mailed to. Admins are seeded with a
+  /// placeholder, so this is worth showing rather than assuming.
+  String get email => _email;
   String get theme => _theme;
   bool get is2FAEnabled => _is2FAEnabled;
   String get linkedNurseId => _linkedNurseId;
@@ -61,6 +65,7 @@ class AdminSettingsProvider extends ChangeNotifier {
     await prefs.remove('enableSidebarToggle');
 
     _displayName = '';
+    _email = '';
     _theme = 'default';
     _is2FAEnabled = false;
     _linkedNurseId = '';
@@ -115,6 +120,7 @@ class AdminSettingsProvider extends ChangeNotifier {
         // both clients now agree on.
         _displayName = AuthProvider.resolveName(userData as Map);
 
+        _email = (userData['email'] ?? '').toString();
         _theme = userData['theme'] ?? prefs.getString('appTheme_$userId') ?? prefs.getString('appTheme') ?? 'default';
         _is2FAEnabled = userData['is2FAEnabled'] ?? false;
         _linkedNurseId = userData['linkedNurseId'] ?? '';
@@ -165,6 +171,32 @@ class AdminSettingsProvider extends ChangeNotifier {
     notifyListeners();
     _clearMessageLater();
     return false;
+  }
+
+  // ── Email change ───────────────────────────────────────────────────────────
+  //
+  // Two legs on purpose. requestEmailChange only parks the address server-side
+  // and mails a code to it; the account's real email moves when — and only
+  // when — verifyEmailChange returns. Neither writes anything locally until
+  // the server has agreed, so a failed call leaves the displayed address
+  // exactly as it was.
+  //
+  // Both rethrow rather than swallowing into _saveMessage: the caller needs the
+  // server's own wording ("already used by another account", "code expired") to
+  // put next to the field, not a generic banner at the top of the page.
+
+  Future<void> requestEmailChange(String newEmail) async {
+    final userId = await SecureStorageService.getUserId() ?? '';
+    await _adminService.requestEmailChange(userId, newEmail);
+  }
+
+  Future<void> verifyEmailChange(String code) async {
+    final userId = await SecureStorageService.getUserId() ?? '';
+    final result = await _adminService.verifyEmailChange(userId, code);
+    _email = (result['email'] ?? _email).toString();
+    _saveMessage = 'Email address updated.';
+    notifyListeners();
+    _clearMessageLater();
   }
 
   Future<bool> changeAdminPassword(String oldPassword, String newPassword) async {

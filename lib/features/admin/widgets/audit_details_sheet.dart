@@ -123,6 +123,7 @@ class AuditDetailsSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Close',
                   icon: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   style: IconButton.styleFrom(
                     backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white, 

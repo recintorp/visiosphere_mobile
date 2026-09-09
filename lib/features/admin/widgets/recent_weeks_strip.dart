@@ -213,11 +213,18 @@ class _RecentWeeksStripState extends State<RecentWeeksStrip> {
                     ],
                   ),
                 ),
-                GestureDetector(
+                // Was ~58x22dp with no name: below the 48dp Android minimum
+                // and announced as an unlabelled element. The chip looks the
+                // same; the padding grows the hit area to 48dp tall.
+                Semantics(
+                  button: true,
+                  label:  'View all alert history',
+                  excludeSemantics: true,
+                  child: GestureDetector(
                   onTap:    () => context.push('/admin/alert-history'),
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 2, 4),
+                    padding: const EdgeInsets.fromLTRB(12, 15, 8, 15),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
@@ -239,6 +246,7 @@ class _RecentWeeksStripState extends State<RecentWeeksStrip> {
                       ],
                     ),
                   ),
+                ),
                 ),
               ],
             ),
@@ -302,7 +310,15 @@ class _WeekRow extends StatelessWidget {
     final label  = _severityLabel(summary.total);
     final rowBg  = isDark ? AppColors.dashBg : Colors.white;
 
-    return Material(
+    // Each row was a bare InkWell 44dp tall: under the 48dp Android minimum,
+    // and with the severity pill and sparkline read as loose fragments rather
+    // than as one row. One label, one target.
+    return Semantics(
+      button: true,
+      label:  '${summary.label}, ${summary.total} '
+              '${summary.total == 1 ? 'alert' : 'alerts'}, $label',
+      excludeSemantics: true,
+      child: Material(
       color: rowBg,
       child: InkWell(
         onTap:          onTap,
@@ -311,10 +327,12 @@ class _WeekRow extends StatelessWidget {
         ),
         splashColor:    const Color(0xFF00A8E8).withValues(alpha: 0.06),
         highlightColor: const Color(0xFF00A8E8).withValues(alpha: 0.04),
+        child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -357,7 +375,11 @@ class _WeekRow extends StatelessWidget {
                   SizedBox(
                     width:  58,
                     height: 28,
-                    child:  WeekSparkline(days: summary.days, isDark: isDark),
+                    // Painted by fl_chart, so it exposes nothing anyway; the
+                    // row's own Semantics label below already states the counts.
+                    child:  ExcludeSemantics(
+                      child: WeekSparkline(days: summary.days, isDark: isDark),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -405,6 +427,8 @@ class _WeekRow extends StatelessWidget {
             ],
           ],
         ),
+        ),
+      ),
       ),
     );
   }

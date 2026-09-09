@@ -150,6 +150,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
               children: [
                 Image.asset(
                   'assets/images/visiologo.png',
+                  semanticLabel: 'VisioSphere',
                   height: 42,
                   width: 42,
                   errorBuilder: (context, error, stackTrace) =>
@@ -161,6 +162,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
                     onPressed: toggleMenu,
                     splashRadius: 24,
@@ -210,13 +212,20 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => context.go('/nurse-home'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        color: Colors.transparent,
-                        child: const Icon(Icons.medical_services_rounded,
-                            color: Colors.white, size: 18),
+                    Semantics(
+                      button: true,
+                      label: 'Switch to nurse view',
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => context.go('/nurse-home'),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          color: Colors.transparent,
+                          child: const Icon(Icons.medical_services_rounded,
+                              color: Colors.white, size: 18),
+                        ),
                       ),
                     ),
                   ],

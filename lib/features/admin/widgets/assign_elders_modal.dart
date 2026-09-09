@@ -139,6 +139,7 @@ class _AssignEldersModalState extends State<AssignEldersModal> {
                       ],
                     ),
                     IconButton(
+                      tooltip: 'Close',
                       icon: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       onPressed: () => Navigator.pop(context),
                     )

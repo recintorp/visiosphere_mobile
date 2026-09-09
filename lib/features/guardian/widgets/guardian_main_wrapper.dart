@@ -102,6 +102,7 @@ class _GuardianMainWrapperState extends State<GuardianMainWrapper> {
               children: [
                 Image.asset(
                   'assets/images/visiologo.png',
+                  semanticLabel: 'VisioSphere',
                   height: 42,
                   width: 42,
                   errorBuilder: (context, error, stackTrace) =>
@@ -113,6 +114,7 @@ class _GuardianMainWrapperState extends State<GuardianMainWrapper> {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
                     onPressed: toggleMenu,
                     splashRadius: 24,

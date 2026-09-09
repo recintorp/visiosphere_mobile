@@ -23,10 +23,19 @@ class EventFilterPills extends StatelessWidget {
           final active = activeEventType == type.id;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              selected: active,
+              label: '${type.label} events',
+              excludeSemantics: true,
+              child: GestureDetector(
               onTap: () => onChanged(type.id),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
+                // 36dp tall before — under Android's 48dp minimum, which the
+                // scanner reported once per pill.
+                constraints: const BoxConstraints(minHeight: 48),
+                alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   color: active
@@ -52,6 +61,7 @@ class EventFilterPills extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
             ),
           );
         }).toList(),

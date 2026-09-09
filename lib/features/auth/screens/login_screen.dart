@@ -831,7 +831,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           enabled: !isLoading,
           style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
-            labelText: 'Email Address',
+            // The field takes either one: AuthProvider.login() branches on
+            // Facilities.roleOf() (the ID prefix) or Facilities.isEmail(), and
+            // every backend service looks the account up with
+            // `$or: [{ id }, { email }]`. Labelling it "Email Address" sent
+            // staff to the wrong credential; labelling it "Staff ID" would
+            // have hidden the email path and excluded guardians.
+            labelText: 'ID or Email Address',
+            hintText: 'e.g. STN-202605 or your registered email',
+            hintStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _kLabelGrey),
             labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),

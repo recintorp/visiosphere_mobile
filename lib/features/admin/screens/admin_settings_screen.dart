@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +25,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _nurseIdController = TextEditingController();
-  
+  final TextEditingController _newEmailController = TextEditingController();
+  final TextEditingController _emailOtpController = TextEditingController();
+
+  // 'idle' shows the address, 'editing' takes a new one, 'verifying' takes the
+  // code that was mailed to it.
+  String _emailStage = 'idle';
+  bool _emailBusy = false;
+  String? _emailError;
+  String _pendingEmail = '';
+
   bool _dataLoaded = false;
   String _selectedTheme = 'default';
 
@@ -100,6 +110,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     _nurseIdController.dispose();
+    _newEmailController.dispose();
+    _emailOtpController.dispose();
     super.dispose();
   }
 
@@ -173,6 +185,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                       prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF00A8E8)),
                       suffixIcon: IconButton(
+                        tooltip: obscurePin ? 'Show PIN' : 'Hide PIN',
                         icon: Icon(obscurePin ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                         onPressed: () {
                           setModalState(() {
@@ -202,6 +215,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
                       prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF00A8E8)),
                       suffixIcon: IconButton(
+                        tooltip: obscureConfirm ? 'Show confirmed PIN' : 'Hide confirmed PIN',
                         icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)), 
                         onPressed: () {
                           setModalState(() {
@@ -344,12 +358,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
             onPressed: widget.onMenuTap ?? () {
               Scaffold.of(context).openDrawer();
             },
           ),
-          Image.asset('assets/images/visio.png', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+          Image.asset('assets/images/visio.png', semanticLabel: 'VisioSphere', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
           // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
           NotificationBellButton(
             color: isDark ? Colors.white : const Color(0xFF00A8E8),
@@ -453,6 +468,296 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
   }
 
+  /// Account email, and the OTP-verified route to changing it.
+  ///
+  /// Admin.email is required at account creation, so an admin always has one —
+  /// but the seeded accounts carry placeholders nobody can receive mail at,
+  /// which quietly breaks "Forgot password?" since the reset code goes to
+  /// whatever is on file. The new address is only applied once a code mailed
+  /// TO it comes back, so a logged-in session alone cannot move the account.
+  Widget _buildEmailCard(AdminSettingsProvider provider, bool isDark) {
+    final labelStyle = TextStyle(
+      fontWeight: FontWeight.w800,
+      fontSize: 10,
+      color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569),
+      letterSpacing: 1.0,
+    );
+    final helpStyle = TextStyle(
+      fontSize: 11.5,
+      fontWeight: FontWeight.w500,
+      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+      height: 1.4,
+    );
+
+    InputDecoration fieldDecoration(String hint) => InputDecoration(
+          isDense: true,
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                  color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), width: 2)),
+        );
+
+    return _buildCard(
+      title: 'Email Address',
+      isDark: isDark,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CURRENT ADDRESS', style: labelStyle),
+          const SizedBox(height: 8),
+          Text(
+            provider.email.isEmpty ? 'Not set' : provider.email,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: isDark ? Colors.white : const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Password reset codes are sent here. If this is not an address you '
+            'can open, change it — otherwise you cannot recover this account.',
+            style: helpStyle,
+          ),
+          const SizedBox(height: 16),
+
+          if (_emailStage == 'idle')
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => setState(() {
+                  _emailStage = 'editing';
+                  _emailError = null;
+                  _newEmailController.clear();
+                }),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00A8E8),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  minimumSize: const Size(48, 48),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Change Email',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+
+          if (_emailStage == 'editing') ...[
+            Text('NEW EMAIL ADDRESS', style: labelStyle),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _newEmailController,
+              enabled: !_emailBusy,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A)),
+              decoration: fieldDecoration('you@example.com'),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We will send a 6-digit code to this address. Your email only '
+              'changes once you enter it.',
+              style: helpStyle,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _emailBusy ? null : () => setState(() {
+                      _emailStage = 'idle';
+                      _emailError = null;
+                    }),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: isDark ? Colors.white : const Color(0xFF00212E),
+                      side: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _emailBusy ? null : () => _sendEmailCode(provider),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00A8E8),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(48, 48),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(_emailBusy ? 'Sending...' : 'Send Code',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          if (_emailStage == 'verifying') ...[
+            Text('VERIFICATION CODE', style: labelStyle),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _emailOtpController,
+              enabled: !_emailBusy,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  letterSpacing: 8,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A)),
+              decoration: fieldDecoration('000000').copyWith(counterText: ''),
+            ),
+            const SizedBox(height: 8),
+            Text('Sent to $_pendingEmail. The code expires in 10 minutes.',
+                style: helpStyle),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _emailBusy ? null : () => setState(() {
+                      _emailStage = 'editing';
+                      _emailOtpController.clear();
+                      _emailError = null;
+                    }),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: isDark ? Colors.white : const Color(0xFF00212E),
+                      side: BorderSide(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Change Address',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _emailBusy ? null : () => _verifyEmailCode(provider),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00A8E8),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      minimumSize: const Size(48, 48),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text(_emailBusy ? 'Verifying...' : 'Verify & Save',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          if (_emailError != null) ...[
+            const SizedBox(height: 12),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _emailError!,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFFFB7185) : const Color(0xFFBE123C),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Dio turns a non-2xx into a DioException, and the server's own wording is
+  /// the useful part ("already used by another account", "code expired") — a
+  /// generic "something went wrong" would leave the admin guessing.
+  String _emailErrorFrom(Object error, String fallback) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] is String && (data['message'] as String).isNotEmpty) {
+        return data['message'] as String;
+      }
+    }
+    return fallback;
+  }
+
+  Future<void> _sendEmailCode(AdminSettingsProvider provider) async {
+    final email = _newEmailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Enter the email address you want to use.');
+      return;
+    }
+    setState(() { _emailBusy = true; _emailError = null; });
+    try {
+      await provider.requestEmailChange(email);
+      if (!mounted) return;
+      setState(() {
+        _pendingEmail = email;
+        _emailStage = 'verifying';
+        _emailOtpController.clear();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _emailError =
+          _emailErrorFrom(e, 'Could not send the verification code.'));
+    } finally {
+      if (mounted) setState(() => _emailBusy = false);
+    }
+  }
+
+  Future<void> _verifyEmailCode(AdminSettingsProvider provider) async {
+    final code = _emailOtpController.text.trim();
+    if (code.length != 6) {
+      setState(() => _emailError = 'Enter the 6-digit code from the email.');
+      return;
+    }
+    setState(() { _emailBusy = true; _emailError = null; });
+    try {
+      await provider.verifyEmailChange(code);
+      if (!mounted) return;
+      setState(() {
+        _emailStage = 'idle';
+        _emailError = null;
+        _newEmailController.clear();
+        _emailOtpController.clear();
+        _pendingEmail = '';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _emailError = _emailErrorFrom(e, 'Could not verify that code.'));
+    } finally {
+      if (mounted) setState(() => _emailBusy = false);
+    }
+  }
+
   Widget _buildAccountTab(AdminSettingsProvider provider, AuthProvider authProvider, bool isDark) {
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -537,6 +842,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             ],
           ),
         ),
+        // Admin only: the nurse view of this screen is a different account,
+        // and these endpoints are /admin/:id/email/*.
+        if (!widget.isNurseView) ...[
+          const SizedBox(height: 24),
+          _buildEmailCard(provider, isDark),
+        ],
         const SizedBox(height: 24),
         _buildCard(
           title: 'Security & Authentication',

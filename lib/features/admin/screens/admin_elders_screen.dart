@@ -450,6 +450,8 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                                     onTap: _showArchivedReportsModal,
                                     borderRadius: BorderRadius.circular(12),
                                     child: Container(
+                                      constraints: const BoxConstraints(minHeight: 48),
+                                      alignment: Alignment.center,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
                                         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -470,6 +472,8 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                                     onTap: _handleExcelImport,
                                     borderRadius: BorderRadius.circular(12),
                                     child: Container(
+                                      constraints: const BoxConstraints(minHeight: 48),
+                                      alignment: Alignment.center,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       decoration: BoxDecoration(
                                         color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.5) : Colors.white,
@@ -528,8 +532,8 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                   style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Search by Resident ID or Name...',
-                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   ),
@@ -553,7 +557,9 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                           InkWell(
                             onTap: _showGenerateReportModal,
                             borderRadius: BorderRadius.circular(8),
-                            child: Padding(
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 48),
+                              alignment: Alignment.center,
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               child: Row(
                                 children: [
@@ -573,7 +579,7 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                     // same residents — two ways to say "all of them".
                     if (_showHouse) ...[
                       SizedBox(
-                        height: 40,
+                        height: 48,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
@@ -592,7 +598,7 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 40,
+                      height: 48,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -845,11 +851,13 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
           Image.asset(
             'assets/images/visio.png',
+            semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
             color: isDark ? Colors.white : null,

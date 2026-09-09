@@ -141,7 +141,11 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
                         'Update Profile',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
                       ),
-                      GestureDetector(
+                      Semantics(
+                        button: true,
+                        label: 'Change profile photo',
+                        excludeSemantics: true,
+                        child: GestureDetector(
                         onTap: () async {
                           await _pickAndUploadImage(context, provider);
                           setModalState(() {}); 
@@ -156,6 +160,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
                               ? Icon(Icons.camera_alt, color: theme.colorScheme.primary)
                               : null,
                         ),
+                      ),
                       )
                     ],
                   ),
@@ -428,6 +433,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
                     labelText: 'Current Password',
                     prefixIcon: const Icon(Icons.lock_clock_outlined),
                     suffixIcon: IconButton(
+                      tooltip: obscureOld ? 'Show current password' : 'Hide current password',
                       icon: Icon(obscureOld ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => setModalState(() => obscureOld = !obscureOld),
                     ),
@@ -442,6 +448,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
                     labelText: 'New Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
+                      tooltip: obscureNew ? 'Show new password' : 'Hide new password',
                       icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => setModalState(() => obscureNew = !obscureNew),
                     ),
@@ -456,6 +463,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
                     labelText: 'Confirm New Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
+                      tooltip: obscureConfirm ? 'Show confirmed password' : 'Hide confirmed password',
                       icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
                     ),
@@ -532,6 +540,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
             children: [
               Image.asset(
                 'assets/images/visio.png',
+                semanticLabel: 'VisioSphere',
                 height: 60,
                 color: theme.brightness == Brightness.dark ? Colors.white : null,
               ),
@@ -573,6 +582,7 @@ class _GuardianSettingsScreenState extends State<GuardianSettingsScreen> with Au
       child: Row(
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu, color: theme.colorScheme.primary),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),

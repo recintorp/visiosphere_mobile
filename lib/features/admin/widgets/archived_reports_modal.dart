@@ -223,6 +223,7 @@ class _ArchivedReportsModalState extends State<ArchivedReportsModal> {
                       ],
                     ),
                     IconButton(
+                      tooltip: 'Close',
                       icon: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       onPressed: () => Navigator.pop(context),
                     )
@@ -360,6 +361,8 @@ class _ArchivedReportsModalState extends State<ArchivedReportsModal> {
             borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
             child: Container(
               width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 48),
+              alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.5) : const Color(0xFFE1F5FE),

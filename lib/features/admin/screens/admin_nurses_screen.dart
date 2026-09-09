@@ -491,8 +491,8 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                       style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         hintText: 'Search by Nurse ID or Name...',
-                        hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                        hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(vertical: 18),
                       ),
@@ -500,7 +500,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
-                    height: 38,
+                    height: 48,
                     child: Row(
                       children: [
                         InkWell(
@@ -683,11 +683,13 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
           Image.asset(
             'assets/images/visio.png',
+            semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
             color: isDark ? Colors.white : null,

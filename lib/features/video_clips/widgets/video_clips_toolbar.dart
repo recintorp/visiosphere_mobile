@@ -24,7 +24,7 @@ class VideoClipsToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
     final activeSort = VideoClipsProvider.sortOptions
         .firstWhere((o) => o.id == sortBy,
             orElse: () => VideoClipsProvider.sortOptions.first);
@@ -79,6 +79,7 @@ class VideoClipsToolbar extends StatelessWidget {
             PopupMenuButton<String>(
               initialValue: sortBy,
               onSelected: onSortChanged,
+              tooltip: 'Sort clips, currently ${activeSort.label}',
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               itemBuilder: (context) => VideoClipsProvider.sortOptions
                   .map((o) => PopupMenuItem<String>(
@@ -95,6 +96,8 @@ class VideoClipsToolbar extends StatelessWidget {
                       ))
                   .toList(),
               child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                alignment: Alignment.center,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(

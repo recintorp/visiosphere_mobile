@@ -48,6 +48,12 @@ class GuardianCard extends StatelessWidget {
         break;
     }
 
+    final spoken = StringBuffer('$fullName, $id, $status, $email')
+      ..write(phone.isEmpty ? ', no phone' : ', $phone')
+      ..write(assignedElders.isEmpty
+          ? ', no elders assigned'
+          : ', ${assignedElders.length} elders assigned');
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -70,7 +76,10 @@ class GuardianCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
+        child: Semantics(
+          button: true,
+          label: spoken.toString(),
+          child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
@@ -79,7 +88,9 @@ class GuardianCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Checkbox for bulk actions
-                Transform.scale(
+                Semantics(
+                  label: 'Select $fullName',
+                  child: Transform.scale(
                   scale: 1.1,
                   child: Checkbox(
                     value: isSelected,
@@ -89,6 +100,7 @@ class GuardianCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1), width: 1.5),
                   ),
+                ),
                 ),
                 const SizedBox(width: 8),
                 
@@ -219,10 +231,16 @@ class GuardianCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          InkWell(
+                          Semantics(
+                            button: true,
+                            label: 'Assign elders to $fullName',
+                            excludeSemantics: true,
+                            child: InkWell(
                             onTap: onAssignElders,
                             borderRadius: BorderRadius.circular(6),
                             child: Container(
+                              constraints: const BoxConstraints(minHeight: 48),
+                              alignment: Alignment.center,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: isDark ? const Color(0xFF00A8E8) : const Color(0xFF0F172A),
@@ -238,6 +256,7 @@ class GuardianCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                          ),
                           )
                         ],
                       )
@@ -247,6 +266,7 @@ class GuardianCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

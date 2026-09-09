@@ -77,17 +77,27 @@ class AlertCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF9A9EAB),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                             letterSpacing: 1.0,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () => provider.dismissAlert(alert.id, userId),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF9A9EAB),
+                        Semantics(
+                          button: true,
+                          label: 'Dismiss alert, ${alert.message}',
+                          excludeSemantics: true,
+                          child: GestureDetector(
+                            onTap: () => provider.dismissAlert(alert.id, userId),
+                            behavior: HitTestBehavior.opaque,
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -107,7 +117,7 @@ class AlertCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF9A9EAB),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -135,8 +145,16 @@ class AlertCard extends StatelessWidget {
                           ),
                         ),
                         if (!isResolved)
-                          GestureDetector(
+                          Semantics(
+                            button: true,
+                            label: 'Acknowledge alert, ${alert.message}',
+                            excludeSemantics: true,
+                            child: GestureDetector(
                             onTap: () => provider.acknowledgeAlert(alert.id, userId),
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                            constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                            alignment: Alignment.centerRight,
                             child: Text(
                               'ACKNOWLEDGE',
                               style: TextStyle(
@@ -145,6 +163,8 @@ class AlertCard extends StatelessWidget {
                                 color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8),
                                 letterSpacing: 1.0,
                               ),
+                            ),
+                            ),
                             ),
                           ),
                       ],

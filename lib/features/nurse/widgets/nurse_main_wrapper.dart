@@ -146,6 +146,7 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
               children: [
                 Image.asset(
                   'assets/images/visiologo.png',
+                  semanticLabel: 'VisioSphere',
                   height: 42,
                   width: 42,
                   errorBuilder: (context, error, stackTrace) =>
@@ -159,6 +160,7 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
+                    tooltip: 'Close',
                     icon: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
                     onPressed: toggleMenu,
                     splashRadius: 24,
@@ -183,13 +185,20 @@ class _NurseMainWrapperState extends State<NurseMainWrapper> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    GestureDetector(
-                      onTap: () => context.go('/admin-home'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        color: Colors.transparent,
-                        child: const Icon(Icons.admin_panel_settings_rounded,
-                            color: Colors.white, size: 18),
+                    Semantics(
+                      button: true,
+                      label: 'Switch to admin view',
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => context.go('/admin-home'),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          color: Colors.transparent,
+                          child: const Icon(Icons.admin_panel_settings_rounded,
+                              color: Colors.white, size: 18),
+                        ),
                       ),
                     ),
                     Container(

@@ -259,7 +259,25 @@ class DashboardChartCard extends StatelessWidget {
     final yMax     = (maxY * 1.25).ceilToDouble().clamp(4.0, double.infinity);
     final todayStr = DateTime.now().toIso8601String().substring(0, 10);
 
-    return SizedBox(
+    // fl_chart paints its axis labels and bars onto a canvas — none of it
+    // reaches the accessibility tree, which is what Accessibility Scanner
+    // reported as "Unexposed text" for the numbers along the axis. A chart
+    // cannot be explored bar-by-bar by touch, so the useful thing to expose is
+    // a spoken summary of what it shows.
+    final total  = days.fold<int>(0, (sum, d) => sum + d.alerts);
+    final busiest = days.isEmpty
+        ? null
+        : days.reduce((a, b) => b.alerts > a.alerts ? b : a);
+    final chartSummary = days.isEmpty
+        ? 'Alert analytics, 7 day overview. No data.'
+        : 'Alert analytics, 7 day overview. '
+          '$total ${total == 1 ? 'alert' : 'alerts'} across 7 days'
+          '${busiest != null && busiest.alerts > 0 ? ', busiest day ${busiest.alerts}' : ''}.';
+
+    return Semantics(
+      label: chartSummary,
+      excludeSemantics: true,
+      child: SizedBox(
       height: 180,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 4, 14, 10),
@@ -332,6 +350,7 @@ class DashboardChartCard extends StatelessWidget {
             groupsSpace: 7,
           ),
         ),
+      ),
       ),
     );
   }

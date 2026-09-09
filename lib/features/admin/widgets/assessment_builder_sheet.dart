@@ -99,9 +99,18 @@ class _TagInputState extends State<TagInput> {
                       ),
                     ),
                     const SizedBox(width: 4.0),
-                    InkWell(
-                      onTap: () => _removeTag(tag),
-                      child: Icon(Icons.close, size: 16.0, color: widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                    Semantics(
+                      button: true,
+                      label: 'Remove tag $tag',
+                      excludeSemantics: true,
+                      child: InkWell(
+                        onTap: () => _removeTag(tag),
+                        child: SizedBox(
+                          width: 48.0,
+                          height: 48.0,
+                          child: Icon(Icons.close, size: 16.0, color: widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -305,10 +314,19 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
                   '${block['type']} Module'.toUpperCase(),
                   style: TextStyle(fontFamily: 'Montserrat', fontSize: 12.0, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), letterSpacing: 1.2),
                 ),
-                InkWell(
-                  onTap: () => provider.removeBlock(block['id']),
-                  borderRadius: BorderRadius.circular(20.0),
-                  child: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), size: 22.0),
+                Semantics(
+                  button: true,
+                  label: 'Remove ${block['type']} module',
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: () => provider.removeBlock(block['id']),
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: SizedBox(
+                      width: 48.0,
+                      height: 48.0,
+                      child: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), size: 22.0),
+                    ),
+                  ),
                 ),
               ],
             ),

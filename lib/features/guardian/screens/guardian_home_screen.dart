@@ -80,11 +80,13 @@ class _GuardianHomeScreenState extends State<GuardianHomeScreen> with AutomaticK
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
           Image.asset(
             'assets/images/visio.png',
+            semanticLabel: 'VisioSphere',
             height: 38,
             color: Colors.white,
             errorBuilder: (context, error, stackTrace) =>
@@ -94,6 +96,7 @@ class _GuardianHomeScreenState extends State<GuardianHomeScreen> with AutomaticK
             alignment: Alignment.center,
             children: [
               IconButton(
+                tooltip: 'Alerts',
                 icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 26),
                 onPressed: () => _openNotifications(context),
               ),

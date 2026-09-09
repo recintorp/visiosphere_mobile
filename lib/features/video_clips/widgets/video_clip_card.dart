@@ -54,6 +54,17 @@ class VideoClipCard extends StatelessWidget {
     final badge = _badges[clip.eventType] ??
         _Badge(const Color(0xFF94A3B8), clip.eventType.toUpperCase());
 
+    // The thumbnail paints the event badge, the time and (when known) the
+    // duration straight onto the image, so none of it reached the a11y tree —
+    // the scanner read them back as "unexposed text" over an unlabelled tap
+    // target. Spoken as one description, plus the clip's own identity so two
+    // cards never describe themselves the same way.
+    final spoken = StringBuffer('${badge.label}, ${clip.cameraName}, '
+        '${clip.dateLabel} ${clip.timeLabel}');
+    if (clip.note.isNotEmpty) spoken.write(', note: ${clip.note}');
+    if (clip.duration != null) spoken.write(', ${clip.duration}');
+    final String selectPrefix = selected ? 'Selected. ' : 'Not selected. ';
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -73,7 +84,11 @@ class VideoClipCard extends StatelessWidget {
           // In selection mode the thumbnail ticks the checkbox instead of
           // opening the player. Opening a video on the way to deleting a dozen
           // clips would make bulk selection unusable.
-          GestureDetector(
+          Semantics(
+            button: true,
+            label: selectionMode ? '$selectPrefix$spoken' : 'Play clip. $spoken',
+            excludeSemantics: true,
+            child: GestureDetector(
             onTap: selectionMode ? onToggleSelect : onSelect,
             child: AspectRatio(
               aspectRatio: 16 / 9,
@@ -84,6 +99,7 @@ class VideoClipCard extends StatelessWidget {
                 selectionMode: selectionMode,
                 selected: selected,
               ),
+            ),
             ),
           ),
           Padding(
@@ -134,7 +150,8 @@ class VideoClipCard extends StatelessWidget {
                   PopupMenuButton<String>(
                     padding: EdgeInsets.zero,
                     iconSize: 16,
-                    tooltip: 'Clip actions',
+                    tooltip: 'Actions for ${badge.label} clip, '
+                        '${clip.cameraName}, ${clip.dateLabel}',
                     color: isDark ? const Color(0xFF0F172A) : Colors.white,
                     icon: Icon(
                       Icons.more_horiz_rounded,

@@ -275,6 +275,7 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
       scrolledUnderElevation: 0,
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
+        tooltip: 'Go back',
         icon: Icon(
           Icons.arrow_back_rounded,
           color: isDark ? AppColors.dashTextPrimary : const Color(0xFF00212E),
@@ -350,6 +351,7 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
               children: [
                 _CalNavBtn(
                   icon: Icons.chevron_left_rounded,
+                  label: 'Previous month',
                   isDark: isDark,
                   onTap: () => setState(() {
                     _calendarMonth = DateTime(
@@ -370,6 +372,7 @@ class _AlertHistoryScreenState extends State<AlertHistoryScreen> {
                 ),
                 _CalNavBtn(
                   icon: Icons.chevron_right_rounded,
+                  label: 'Next month',
                   isDark: isDark,
                   onTap: () => setState(() {
                     _calendarMonth = DateTime(
@@ -702,13 +705,29 @@ class _CalNavBtn extends StatelessWidget {
   final IconData icon;
   final bool isDark;
   final VoidCallback onTap;
-  const _CalNavBtn({required this.icon, required this.isDark, required this.onTap});
+  final String label;
+  const _CalNavBtn({
+    required this.icon,
+    required this.isDark,
+    required this.onTap,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // The tinted square stays 32dp; the tap target around it grows to 48dp.
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
+        width:  48,
+        height: 48,
+        alignment: Alignment.center,
+        child: Container(
         width:  32,
         height: 32,
         decoration: BoxDecoration(
@@ -718,6 +737,8 @@ class _CalNavBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, size: 18, color: const Color(0xFF00A8E8)),
+        ),
+      ),
       ),
     );
   }
@@ -807,9 +828,18 @@ class _WeekDetailPanel extends StatelessWidget {
                             ],
                           ),
                         ),
-                        GestureDetector(
+                        Semantics(
+                          button: true,
+                          label: 'Close week details',
+                          excludeSemantics: true,
+                          child: GestureDetector(
                           onTap: onClose,
+                          behavior: HitTestBehavior.opaque,
                           child: Container(
+                            width:  48,
+                            height: 48,
+                            alignment: Alignment.center,
+                            child: Container(
                             width:  32,
                             height: 32,
                             decoration: BoxDecoration(
@@ -823,6 +853,8 @@ class _WeekDetailPanel extends StatelessWidget {
                               size:  16,
                               color: Color(0xFF00A8E8),
                             ),
+                          ),
+                          ),
                           ),
                         ),
                       ],

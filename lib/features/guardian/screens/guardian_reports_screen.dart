@@ -63,6 +63,7 @@ class _GuardianReportsScreenState extends State<GuardianReportsScreen> with Auto
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu_rounded, color: theme.colorScheme.primary, size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),

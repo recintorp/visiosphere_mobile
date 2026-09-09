@@ -69,9 +69,19 @@ class EmergencyToast extends StatelessWidget {
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => provider.clearActiveToast(),
-                      child: Icon(Icons.close, size: 16, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF9A9EAB)),
+                    Semantics(
+                      button: true,
+                      label: 'Dismiss alert',
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => provider.clearActiveToast(),
+                        behavior: HitTestBehavior.opaque,
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Icon(Icons.close, size: 16, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                        ),
+                      ),
                     ),
                   ],
                 ),

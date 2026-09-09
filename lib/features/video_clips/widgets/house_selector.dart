@@ -33,9 +33,16 @@ class HouseSelector extends StatelessWidget {
           final active = selectedHouseId == h.id;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
+            child: Semantics(
+              button: true,
+              selected: active,
+              label: h.name,
+              excludeSemantics: true,
+              child: GestureDetector(
               onTap: () => onSelect(h.id),
               child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                alignment: Alignment.center,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
@@ -61,6 +68,7 @@ class HouseSelector extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
             ),
           );
         }).toList(),

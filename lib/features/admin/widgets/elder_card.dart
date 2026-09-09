@@ -48,7 +48,17 @@ class ElderCard extends StatelessWidget {
 
     final String initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'E';
 
-    return GestureDetector(
+    // See NurseCard: one labelled node per row clears "Item label",
+    // "Unexposed text" and the duplicate "Item descriptions" together.
+    final spoken = StringBuffer('$fullName, $residentId, $attendanceText');
+    if (hasNotes) spoken.write(', has notes');
+    if (showHouse) spoken.write(', house $house');
+
+    return Semantics(
+      button: true,
+      label: spoken.toString(),
+      excludeSemantics: true,
+      child: GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -246,6 +256,7 @@ class ElderCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -251,6 +251,8 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                                   _showEditModal(guardian);
                                 },
                                 child: Container(
+                                  constraints: const BoxConstraints(minHeight: 48),
+                                  alignment: Alignment.center,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: isDark ? const Color(0xFF1E293B) : Colors.white, 
@@ -265,6 +267,8 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                               InkWell(
                                 onTap: () => _showDeleteDialog(_selectedGuardians),
                                 child: Container(
+                                  constraints: const BoxConstraints(minHeight: 48),
+                                  alignment: Alignment.center,
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
                                     color: isDark ? const Color(0xFF4C0519).withValues(alpha: 0.3) : const Color(0xFFFFF1F2), 
@@ -276,11 +280,17 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                               ),
                             ],
                             const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => setState(() => _selectedGuardians.clear()),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Icon(Icons.close_rounded, size: 18, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                            Semantics(
+                              button: true,
+                              label: 'Clear selection',
+                              excludeSemantics: true,
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedGuardians.clear()),
+                                child: SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Icon(Icons.close_rounded, size: 18, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                ),
                               ),
                             ),
                           ],
@@ -305,8 +315,8 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                   style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Search by ID, Name, or Email...',
-                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   ),
@@ -327,7 +337,7 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 38,
+                      height: 48,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -517,11 +527,13 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
+            tooltip: 'Open navigation menu',
             icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
           Image.asset(
             'assets/images/visio.png',
+            semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
             color: isDark ? Colors.white : null,

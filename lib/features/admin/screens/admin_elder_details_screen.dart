@@ -447,6 +447,7 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
+          tooltip: 'Go back',
           icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
@@ -682,9 +683,18 @@ class _AdminElderDetailsScreenState extends State<AdminElderDetailsScreen> {
                               children: [
                                 Text('Monitoring Notes', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
                                 if (!_isEditingNotes)
-                                  InkWell(
-                                    onTap: () => setState(() => _isEditingNotes = true),
-                                    child: Icon(Icons.edit_note_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), size: 24),
+                                  Semantics(
+                                    button: true,
+                                    label: 'Edit monitoring notes',
+                                    excludeSemantics: true,
+                                    child: InkWell(
+                                      onTap: () => setState(() => _isEditingNotes = true),
+                                      child: SizedBox(
+                                        width: 48,
+                                        height: 48,
+                                        child: Icon(Icons.edit_note_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), size: 24),
+                                      ),
+                                    ),
                                   )
                               ],
                             ),

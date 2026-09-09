@@ -134,6 +134,7 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
                           : const Color(0xFFE2E8F0)),
                 ),
                 child: IconButton(
+                  tooltip: 'Open navigation menu',
                   icon: Icon(Icons.menu_rounded,
                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                       size: 22),
@@ -232,6 +233,7 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             side: BorderSide(
                 color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            minimumSize: const Size(48, 48),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -253,6 +255,10 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
         const Spacer(),
         TextButton(
           onPressed: provider.selectAllVisible,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            tapTargetSize: MaterialTapTargetSize.padded,
+          ),
           child: Text('Select all',
               style: TextStyle(
                   fontFamily: 'Montserrat',
@@ -262,6 +268,10 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
         ),
         TextButton(
           onPressed: provider.exitSelectionMode,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            tapTargetSize: MaterialTapTargetSize.padded,
+          ),
           child: Text('Cancel',
               style: TextStyle(
                   fontFamily: 'Montserrat',
@@ -279,6 +289,7 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             foregroundColor: Colors.white,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            minimumSize: const Size(48, 48),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),

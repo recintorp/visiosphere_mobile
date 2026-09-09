@@ -100,6 +100,7 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
                   border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                 ),
                 child: IconButton(
+                  tooltip: 'Open navigation menu',
                   icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 22),
                   onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
                   padding: const EdgeInsets.all(8),
@@ -202,7 +203,14 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
           final isActive = camera.cameraId == provider.selectedCameraId;
           final isOnline = camera.status == 'Active';
 
-          return GestureDetector(
+          return Semantics(
+            button: true,
+            selected: isActive,
+            // The online/offline state was a bare coloured dot — nothing in the
+            // a11y tree said which camera was live.
+            label: camera.name + (isOnline ? ', online' : ', offline'),
+            excludeSemantics: true,
+            child: GestureDetector(
             onTap: () => provider.selectCamera(camera.cameraId),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
@@ -277,6 +285,7 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
                   ),
                 ],
               ),
+            ),
             ),
           );
         },
@@ -424,7 +433,7 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
     // Incident enum, so the pill could only ever return zero results.
     final filters = ['All', 'Unresolved', 'Fall', 'Agitation', 'Inactivity', 'Lying Down'];
     return Container(
-      height: 40,
+      height: 48,
       margin: const EdgeInsets.only(bottom: 12),
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -435,7 +444,12 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
         itemBuilder: (context, index) {
           final f = filters[index];
           final isSelected = provider.filterModule == f;
-          return GestureDetector(
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: '$f alerts',
+            excludeSemantics: true,
+            child: GestureDetector(
             onTap: () => provider.setFilterModule(f),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -455,6 +469,7 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
                   color: isSelected ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                 ),
               ),
+            ),
             ),
           );
         },

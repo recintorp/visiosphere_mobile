@@ -63,6 +63,25 @@ class AdminApiService {
     return response.data as Map<String, dynamic>;
   }
 
+  /// Parks [email] on the account as `pendingEmail` and mails a 6-digit code
+  /// to it. Nothing about the account's real email changes until
+  /// [verifyEmailChange] hands that code back.
+  Future<Map<String, dynamic>> requestEmailChange(String adminId, String email) async {
+    final response = await _dio.post(
+      '${ApiConstants.adminBase}/$adminId/email/request',
+      data: {'email': email},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> verifyEmailChange(String adminId, String code) async {
+    final response = await _dio.post(
+      '${ApiConstants.adminBase}/$adminId/email/verify',
+      data: {'code': code},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> changePassword(String adminId, String oldPassword, String newPassword) async {
     final response = await _dio.put(
       '${ApiConstants.adminBase}/$adminId/change-password',

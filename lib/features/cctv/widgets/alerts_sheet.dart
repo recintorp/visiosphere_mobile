@@ -68,6 +68,7 @@ class NotificationBellButton extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         IconButton(
+          tooltip: 'Alerts',
           icon: Icon(
             unread > 0
                 ? Icons.notifications_rounded
@@ -240,19 +241,30 @@ class AlertsSheet extends StatelessWidget {
                                           color:      Color(0xFF00A8E8),
                                         )),
                                     if (alert.status == 'Unresolved')
-                                      GestureDetector(
+                                      Semantics(
+                                        button: true,
+                                        label: 'Acknowledge alert, ${alert.message}',
+                                        excludeSemantics: true,
+                                        child: GestureDetector(
                                         onTap: () {
                                           cctv.acknowledgeAlert(
                                               alert.id, context.read<AuthProvider>().userId);
                                           Navigator.pop(context);
                                         },
-                                        child: const Text(
-                                          'ACKNOWLEDGE',
-                                          style: TextStyle(
-                                            fontSize:   10,
-                                            fontWeight: FontWeight.w900,
-                                            color:      Color(0xFF22C55E),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Container(
+                                          constraints: const BoxConstraints(
+                                              minHeight: 48, minWidth: 48),
+                                          alignment: Alignment.centerRight,
+                                          child: const Text(
+                                            'ACKNOWLEDGE',
+                                            style: TextStyle(
+                                              fontSize:   10,
+                                              fontWeight: FontWeight.w900,
+                                              color:      Color(0xFF22C55E),
+                                            ),
                                           ),
+                                        ),
                                         ),
                                       ),
                                   ],

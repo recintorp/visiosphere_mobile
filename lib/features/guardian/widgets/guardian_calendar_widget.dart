@@ -124,6 +124,7 @@ class _GuardianCalendarWidgetState extends State<GuardianCalendarWidget> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: IconButton(
+                        tooltip: 'Previous month',
                         icon: Icon(Icons.chevron_left_rounded, color: theme.colorScheme.onSurfaceVariant),
                         onPressed: _isExpanded ? () => widget.onChangeMonth(-1) : null,
                         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -137,6 +138,7 @@ class _GuardianCalendarWidgetState extends State<GuardianCalendarWidget> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: IconButton(
+                        tooltip: 'Next month',
                         icon: Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
                         onPressed: _isExpanded ? () => widget.onChangeMonth(1) : null,
                         constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
