@@ -16,30 +16,38 @@ class CameraFeedWidget extends StatelessWidget {
     final provider = context.watch<CctvProvider>();
     final feedUrl = provider.streamUrlFor(camera);
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF020617) : const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildFeedContent(isDark, feedUrl),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-            child: Container(
-              decoration: const BoxDecoration(gradient: LinearOverlayGradient()),
+    final feedSummary = camera.status == 'Active'
+        ? '${camera.name} camera feed. Live video.'
+        : '${camera.name} camera feed. No signal.';
+
+    return Semantics(
+      container: true,
+      label: feedSummary,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF020617) : const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildFeedContent(isDark, feedUrl),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 80,
+              child: Container(
+                decoration: const BoxDecoration(gradient: LinearOverlayGradient()),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

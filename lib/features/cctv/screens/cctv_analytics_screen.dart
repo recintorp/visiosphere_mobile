@@ -75,73 +75,79 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
     final activeCount = provider.cameras.where((c) => c.status == 'Active').length;
     final totalCount = provider.cameras.length;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 20.0),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                ),
-                child: IconButton(
-                  tooltip: 'Open navigation menu',
-                  icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 22),
-                  onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'CCTV Hub',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
+    final headerSummary = 'CCTV hub. Active cameras $activeCount of $totalCount. Alerts ${provider.alerts.length}.';
+
+    return Semantics(
+      container: true,
+      label: headerSummary,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 20.0),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                   ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'LIVE MONITORING',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF00A8E8),
-                      letterSpacing: 1.2,
-                    ),
+                  child: IconButton(
+                    tooltip: 'Open navigation menu',
+                    icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 22),
+                    onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
                   ),
-                ],
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _buildStatPill('ACTIVE', '$activeCount/$totalCount', false, isDark),
-              const SizedBox(width: 12),
-              _buildStatPill('ALERTS', '${provider.alerts.length}', true, isDark),
-            ],
-          ),
-        ],
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CCTV Hub',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'LIVE MONITORING',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF00A8E8),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                _buildStatPill('ACTIVE', '$activeCount/$totalCount', false, isDark),
+                const SizedBox(width: 12),
+                _buildStatPill('ALERTS', '${provider.alerts.length}', true, isDark),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -294,134 +300,149 @@ class _CctvAnalyticsScreenState extends State<CctvAnalyticsScreen> {
   }
 
   Widget _buildVideoContainer(CctvProvider provider, bool isDark) {
+    final selected = provider.selectedCamera;
+    final videoSummary = selected == null
+        ? 'Camera grid, ${provider.cameras.length} cameras available.'
+        : '${selected.name} camera feed. Status: ${selected.status == 'Active' ? 'live' : 'offline'}.';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: Colors.black,
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.5) : const Color(0xFF0F172A).withValues(alpha: 0.15),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
+      child: Semantics(
+        container: true,
+        label: videoSummary,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            color: Colors.black,
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withValues(alpha: 0.5) : const Color(0xFF0F172A).withValues(alpha: 0.15),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
+              width: 4,
             ),
-          ],
-          border: Border.all(
-            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0).withValues(alpha: 0.8),
-            width: 4,
           ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: provider.selectedCamera == null
-              ? GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 16 / 9,
-                    crossAxisSpacing: 2,
-                    mainAxisSpacing: 2,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: provider.selectedCamera == null
+                ? GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 16 / 9,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 2,
+                    ),
+                    itemCount: provider.cameras.length,
+                    itemBuilder: (context, index) => CameraFeedWidget(camera: provider.cameras[index]),
+                  )
+                : AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: CameraFeedWidget(camera: provider.selectedCamera!),
                   ),
-                  itemCount: provider.cameras.length,
-                  itemBuilder: (context, index) => CameraFeedWidget(camera: provider.cameras[index]),
-                )
-              : AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: CameraFeedWidget(camera: provider.selectedCamera!),
-                ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAlertsSection(CctvProvider provider, bool isDark) {
+    final alertsSummary = 'AI analytics log. ${provider.filteredAlerts.length} events shown.';
+
     return Expanded(
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, -8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 4),
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(10),
+      child: Semantics(
+        container: true,
+        label: alertsSummary,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            boxShadow: [
+              BoxShadow(
+                color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 4),
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.analytics_rounded, color: Color(0xFF00A8E8), size: 18),
                     ),
-                    child: const Icon(Icons.analytics_rounded, color: Color(0xFF00A8E8), size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'AI Analytics Log',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${provider.filteredAlerts.length} EVENTS',
+                    const SizedBox(width: 12),
+                    Text(
+                      'AI Analytics Log',
                       style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                        letterSpacing: 0.5,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            _buildFilterChips(provider, isDark),
-            Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9), thickness: 1.5),
-            Expanded(
-              child: provider.filteredAlerts.isEmpty
-                  ? _buildEmptyState(isDark)
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: provider.filteredAlerts.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        return AlertCard(alert: provider.filteredAlerts[index], provider: provider);
-                      },
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${provider.filteredAlerts.length} EVENTS',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+              _buildFilterChips(provider, isDark),
+              Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9), thickness: 1.5),
+              Expanded(
+                child: provider.filteredAlerts.isEmpty
+                    ? _buildEmptyState(isDark)
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: provider.filteredAlerts.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return AlertCard(alert: provider.filteredAlerts[index], provider: provider);
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

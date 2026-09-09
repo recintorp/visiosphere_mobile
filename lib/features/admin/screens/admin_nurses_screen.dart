@@ -404,6 +404,8 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                       height: 140,
                       width: 140,
                       fit: BoxFit.contain,
+                      color: const Color(0xFF0066CC),
+                      colorBlendMode: BlendMode.srcIn,
                       errorBuilder: (c, e, s) => const SizedBox(),
                     ),
                   ),
@@ -475,26 +477,31 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        context.read<AdminNursesProvider>().setSearchTerm(value);
-                      },
-                      style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                      decoration: InputDecoration(
-                        hintText: 'Search by Nurse ID or Name...',
-                        hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
-                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                  Semantics(
+                    label: 'Search by nurse ID or name',
+                    textField: true,
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          context.read<AdminNursesProvider>().setSearchTerm(value);
+                        },
+                        style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                        decoration: InputDecoration(
+                          hintText: 'Search by Nurse ID or Name...',
+                          hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                          prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                        ),
                       ),
                     ),
                   ),
@@ -509,6 +516,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                           },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
+                            constraints: const BoxConstraints(minHeight: 48),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
                               color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -651,6 +659,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
       onTap: () => provider.setFilterStatus(status),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        height: 48,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
@@ -692,7 +701,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
             semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
-            color: isDark ? Colors.white : null,
+            color: isDark ? Colors.white : const Color(0xFF0066CC),
             errorBuilder: (context, error, stackTrace) =>
                 const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),

@@ -146,84 +146,92 @@ class _AlertHeroCard extends StatelessWidget {
       subText    = 'No active alerts · $camsOnline/$camsTotal cameras online';
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color:        bg,
-        borderRadius: BorderRadius.circular(16),
-        border:       Border.all(color: borderCol),
-        boxShadow: [
-          BoxShadow(
-            color: hasAlerts
-                ? const Color(0xFFF87171).withValues(alpha: isDark ? 0.12 : 0.08)
-                : const Color(0xFF00A8E8).withValues(alpha: isDark ? 0.08 : 0.05),
-            blurRadius: 12,
-            offset:     const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      child: Row(
-        children: [
-          Container(
-            width:  44,
-            height: 44,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
-            child: Icon(heroIcon, color: iconColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize:       MainAxisSize.min,
-              children: [
-                Text(
-                  titleText,
-                  style: TextStyle(
-                    fontSize:      15,
-                    fontWeight:    FontWeight.w900,
-                    letterSpacing: -0.3,
-                    height:        1.1,
-                    color:         titleColor,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subText,
-                  style: TextStyle(
-                    fontSize:   11,
-                    fontWeight: FontWeight.w600,
-                    color:      subColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (hasAlerts) ...[
-            const SizedBox(width: 10),
-            Container(
-              width:  42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF87171).withValues(alpha: isDark ? 0.18 : 0.10),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(
-                  color: const Color(0xFFF87171).withValues(alpha: 0.35),
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                alertsCount > 99 ? '99+' : alertsCount.toString(),
-                style: const TextStyle(
-                  fontSize:      18,
-                  fontWeight:    FontWeight.w900,
-                  letterSpacing: -0.5,
-                  color:         Color(0xFFF87171),
-                  height:        1.0,
-                ),
-              ),
+    final semanticLabel = hasAlerts
+        ? '$titleText. $subText. $alertsCount active alerts.'
+        : '$titleText. $subText.';
+
+    return Semantics(
+      container: true,
+      label: semanticLabel,
+      child: Container(
+        decoration: BoxDecoration(
+          color:        bg,
+          borderRadius: BorderRadius.circular(16),
+          border:       Border.all(color: borderCol),
+          boxShadow: [
+            BoxShadow(
+              color: hasAlerts
+                  ? const Color(0xFFF87171).withValues(alpha: isDark ? 0.12 : 0.08)
+                  : const Color(0xFF00A8E8).withValues(alpha: isDark ? 0.08 : 0.05),
+              blurRadius: 12,
+              offset:     const Offset(0, 3),
             ),
           ],
-        ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width:  44,
+              height: 44,
+              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+              child: Icon(heroIcon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize:       MainAxisSize.min,
+                children: [
+                  Text(
+                    titleText,
+                    style: TextStyle(
+                      fontSize:      15,
+                      fontWeight:    FontWeight.w900,
+                      letterSpacing: -0.3,
+                      height:        1.1,
+                      color:         titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subText,
+                    style: TextStyle(
+                      fontSize:   11,
+                      fontWeight: FontWeight.w600,
+                      color:      subColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (hasAlerts) ...[
+              const SizedBox(width: 10),
+              Container(
+                width:  42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF87171).withValues(alpha: isDark ? 0.18 : 0.10),
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(
+                    color: const Color(0xFFF87171).withValues(alpha: 0.35),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  alertsCount > 99 ? '99+' : alertsCount.toString(),
+                  style: const TextStyle(
+                    fontSize:      18,
+                    fontWeight:    FontWeight.w900,
+                    letterSpacing: -0.5,
+                    color:         Color(0xFFF87171),
+                    height:        1.0,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

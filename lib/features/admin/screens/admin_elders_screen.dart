@@ -409,12 +409,16 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
                   top: 10,
                   child: Opacity(
                     opacity: isDark ? 0.3 : 0.6,
-                    child: Image.asset(
-                      'assets/images/logogo.png',
-                      height: 140,
-                      width: 140,
-                      fit: BoxFit.contain,
-                      errorBuilder: (c, e, s) => const SizedBox(),
+                    child: ExcludeSemantics(
+                      child: Image.asset(
+                        'assets/images/logogo.png',
+                        height: 140,
+                        width: 140,
+                        fit: BoxFit.contain,
+                        color: const Color(0xFF0066CC),
+                        colorBlendMode: BlendMode.srcIn,
+                        errorBuilder: (c, e, s) => const SizedBox(),
+                      ),
                     ),
                   ),
                 ),
@@ -520,22 +524,27 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
             
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) => context.read<AdminEldersProvider>().setSearchTerm(value),
-                  style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Search by Resident ID or Name...',
-                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
-                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 18),
+              child: Semantics(
+                label: 'Search by resident ID or name',
+                textField: true,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => context.read<AdminEldersProvider>().setSearchTerm(value),
+                    style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: 'Search by Resident ID or Name...',
+                      hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                      prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
                   ),
                 ),
               ),
@@ -757,29 +766,34 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
   Widget _buildHousePill(String house, AdminEldersProvider provider, bool isDark) {
     final isActive = provider.selectedHouse == house;
     final shortName = house.replaceAll('House of St. ', '');
-    return GestureDetector(
-      onTap: () => provider.setHouse(house),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        decoration: BoxDecoration(
-          color: isActive ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)) : (isDark ? const Color(0xFF1E293B) : Colors.white),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-          boxShadow: isActive 
-            ? [BoxShadow(color: (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))] 
-            : [],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          shortName.toUpperCase(),
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: isActive ? (isDark ? const Color(0xFF0F172A) : Colors.white) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-            letterSpacing: 0.5,
+    return Semantics(
+      button: true,
+      label: 'Filter residents by house ${shortName.toUpperCase()}',
+      child: GestureDetector(
+        onTap: () => provider.setHouse(house),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 48,
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          decoration: BoxDecoration(
+            color: isActive ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)) : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+            boxShadow: isActive 
+              ? [BoxShadow(color: (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))] 
+              : [],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            shortName.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: isActive ? (isDark ? const Color(0xFF0F172A) : Colors.white) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -788,26 +802,31 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
 
   Widget _buildAttendanceFilterPill(String status, AdminEldersProvider provider, bool isDark) {
     final isActive = provider.filterAttendance == status;
-    return GestureDetector(
-      onTap: () => provider.setFilterAttendance(status),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF00A8E8) : (isDark ? const Color(0xFF1E293B) : Colors.white),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          status.toUpperCase(),
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: isActive ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.5,
+    return Semantics(
+      button: true,
+      label: 'Filter residents by attendance status ${status.toLowerCase()}',
+      child: GestureDetector(
+        onTap: () => provider.setFilterAttendance(status),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 48,
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF00A8E8) : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: isActive ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -817,26 +836,31 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
   Widget _buildNotesFilterPill(String status, AdminEldersProvider provider, bool isDark) {
     final isActive = provider.filterNotes == status;
     String label = status == 'All' ? 'ALL NOTES' : status == 'WithNotes' ? 'HAS NOTES' : 'NO NOTES';
-    return GestureDetector(
-      onTap: () => provider.setFilterNotes(status),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFF59E0B) : (isDark ? const Color(0xFF1E293B) : Colors.white),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: isActive ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.5,
+    return Semantics(
+      button: true,
+      label: 'Filter residents by notes state ${label.toLowerCase()}',
+      child: GestureDetector(
+        onTap: () => provider.setFilterNotes(status),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 48,
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFFF59E0B) : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isActive ? Colors.transparent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: isActive ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -860,7 +884,7 @@ class _AdminEldersScreenState extends State<AdminEldersScreen>
             semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
-            color: isDark ? Colors.white : null,
+            color: isDark ? Colors.white : const Color(0xFF0066CC),
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),
           // Was an IconButton with `onPressed: () {}` and a red dot that was

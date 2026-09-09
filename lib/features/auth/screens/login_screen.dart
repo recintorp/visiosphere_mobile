@@ -639,15 +639,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           children: [
                             FadeInDown(
                               duration: const Duration(milliseconds: 800),
-                              child: ColorFiltered(
-                                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                                child: Image.asset(
-                                  'assets/images/logo.png',
-                                  height: 100,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.security, size: 80, color: Colors.white);
-                                  },
-                                ),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                height: 100,
+                                color: const Color(0xFF0075A2),
+                                colorBlendMode: BlendMode.srcIn,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.security, size: 80, color: Colors.white);
+                                },
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -823,7 +822,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         // header distinguishes them by role rather than renaming either.
         Semantics(
           header: true,
-          child: const Text('Sign In', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
+          child: const Text('Access your account', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
         ),
         const SizedBox(height: 32),
         TextFormField(

@@ -65,6 +65,7 @@ class DashboardHeader extends StatelessWidget {
             ),
             onPressed:     onMenuTap ?? () => Scaffold.of(context).openDrawer(),
             visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           ),
           const SizedBox(width: 2),
           // Greeting block
@@ -129,7 +130,7 @@ class DashboardHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize:   9,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.dashTextMuted : const Color(0xFF94A3B8),
+                    color: isDark ? AppColors.dashTextMuted : AppColors.dashTextMuted,
                   ),
                 ),
               ],

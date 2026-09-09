@@ -149,14 +149,17 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Video Clips',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'Video Clips',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
                       ),
                     ),
                     Text(

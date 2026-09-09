@@ -82,7 +82,14 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
             icon: Icon(Icons.menu, color: isDark ? Colors.white : const Color(0xFF00A8E8)),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
-          Image.asset('assets/images/visio.png', semanticLabel: 'VisioSphere', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+          ExcludeSemantics(
+            child: Image.asset(
+              'assets/images/visio.png',
+              height: 36,
+              color: isDark ? Colors.white : null,
+              errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported),
+            ),
+          ),
           // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
           NotificationBellButton(
             color: isDark ? Colors.white : const Color(0xFF00A8E8),
@@ -120,11 +127,25 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
   }
 
   Widget _buildResidentSelector(List<dynamic> residents, bool isDark) {
+    final selectedResident = residents.firstWhere(
+      (r) => (r['_id'] ?? r['residentId']).toString() == (_selectedResidentId ?? ''),
+      orElse: () => <String, dynamic>{},
+    );
+    final selectedResidentName = selectedResident is Map<String, dynamic>
+        ? '${selectedResident['firstName'] ?? ''} ${selectedResident['lastName'] ?? ''}'.trim()
+        : '';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
+      child: Semantics(
+        container: true,
+        label: _selectedResidentId == null
+            ? 'Select a resident'
+            : 'Selected resident $selectedResidentName',
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1), width: 1.5),
@@ -132,26 +153,27 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
             BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
           ]
         ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            isExpanded: true,
-            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-            hint: Text('Select a Resident...', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-            value: _selectedResidentId,
-            icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
-            items: residents.map((r) {
-              final id = r['_id'] ?? r['residentId'];
-              return DropdownMenuItem<String>(
-                value: id.toString(),
-                child: Text('${r['firstName']} ${r['lastName']}', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-              );
-            }).toList(),
-            onChanged: (val) {
-              setState(() {
-                _selectedResidentId = val;
-              });
-              if (val != null) context.read<AdminAssessmentsProvider>().fetchAssessments(val);
-            },
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              hint: Text('Select a Resident...', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+              value: _selectedResidentId,
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+              items: residents.map((r) {
+                final id = r['_id'] ?? r['residentId'];
+                return DropdownMenuItem<String>(
+                  value: id.toString(),
+                  child: Text('${r['firstName']} ${r['lastName']}', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                );
+              }).toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedResidentId = val;
+                });
+                if (val != null) context.read<AdminAssessmentsProvider>().fetchAssessments(val);
+              },
+            ),
           ),
         ),
       ),

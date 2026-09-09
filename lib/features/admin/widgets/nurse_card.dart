@@ -90,9 +90,9 @@ class NurseCard extends StatelessWidget {
     if (showAssignedCount) spoken.write(', $assignedCount elders assigned');
 
     return Semantics(
+      container: true,
       button: true,
       label: spoken.toString(),
-      excludeSemantics: true,
       child: GestureDetector(
       onTap: onTap,
       child: Container(

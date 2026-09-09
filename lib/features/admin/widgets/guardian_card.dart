@@ -77,8 +77,10 @@ class GuardianCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: Semantics(
+          container: true,
           button: true,
           label: spoken.toString(),
+          excludeSemantics: true,
           child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),

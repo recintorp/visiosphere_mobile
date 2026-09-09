@@ -158,12 +158,16 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
                   top: 10,
                   child: Opacity(
                     opacity: isDark ? 0.3 : 0.6,
-                    child: Image.asset(
-                      'assets/images/logogo.png',
-                      height: 140,
-                      width: 140,
-                      fit: BoxFit.contain,
-                      errorBuilder: (c, e, s) => const SizedBox(),
+                    child: ExcludeSemantics(
+                      child: Image.asset(
+                        'assets/images/logogo.png',
+                        height: 140,
+                        width: 140,
+                        fit: BoxFit.contain,
+                        color: const Color(0xFF0066CC),
+                        colorBlendMode: BlendMode.srcIn,
+                        errorBuilder: (c, e, s) => const SizedBox(),
+                      ),
                     ),
                   ),
                 ),
@@ -303,22 +307,27 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) => context.read<AdminGuardiansProvider>().setSearchTerm(value),
-                  style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Search by ID, Name, or Email...',
-                    hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
-                    prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 18),
+              child: Semantics(
+                label: 'Search by guardian ID, name, or email',
+                textField: true,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 4))],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => context.read<AdminGuardiansProvider>().setSearchTerm(value),
+                    style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: 'Search by ID, Name, or Email...',
+                      hintStyle: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 14, fontWeight: FontWeight.w500),
+                      prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
+                    ),
                   ),
                 ),
               ),
@@ -466,6 +475,7 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
       onTap: () => provider.toggleSortOrder(sortValue),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        height: 48,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
@@ -497,6 +507,7 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
       onTap: () => provider.setStatusFilter(status),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        height: 48,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
@@ -536,7 +547,7 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
             semanticLabel: 'VisioSphere',
             height: 34,
             fit: BoxFit.contain,
-            color: isDark ? Colors.white : null,
+            color: isDark ? Colors.white : const Color(0xFF0066CC),
             errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
           ),
           // Was an IconButton with `onPressed: () {}` and a red dot that was

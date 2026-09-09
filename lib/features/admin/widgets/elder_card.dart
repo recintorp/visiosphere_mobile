@@ -55,9 +55,9 @@ class ElderCard extends StatelessWidget {
     if (showHouse) spoken.write(', house $house');
 
     return Semantics(
+      container: true,
       button: true,
       label: spoken.toString(),
-      excludeSemantics: true,
       child: GestureDetector(
       onTap: onTap,
       child: Container(

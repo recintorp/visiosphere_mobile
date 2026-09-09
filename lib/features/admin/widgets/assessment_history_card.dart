@@ -377,101 +377,171 @@ class _AssessmentHistoryCardState extends State<AssessmentHistoryCard> {
     final comments = widget.assessment['comments'] as List<dynamic>? ?? [];
     final reactions = widget.assessment['reactions'] as Map<String, dynamic>? ?? {};
     final tags = widget.assessment['tags'] as List<dynamic>? ?? [];
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardSummary =
+        '$title, $date, By: $author, Blocks: ${blocks.length}, Comments: ${comments.length}, ${_isExpanded ? 'expanded' : 'collapsed'}';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: _isExpanded ? (isDark ? 0 : 8) : 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _isExpanded ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-          width: _isExpanded ? 2 : 1,
+    return Semantics(
+      container: true,
+      button: true,
+      label: cardSummary,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: _isExpanded ? (isDark ? 0 : 8) : 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: _isExpanded
+                ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            width: _isExpanded ? 2 : 1,
+          ),
         ),
-      ),
-      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-      shadowColor: isDark ? Colors.transparent : const Color(0xFF0F172A).withValues(alpha: 0.1),
-      child: InkWell(
-        onTap: () => setState(() => _isExpanded = !_isExpanded),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A), height: 1.3),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.5) : const Color(0xFFE1F5FE), borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                date,
-                                style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), fontSize: 11, fontWeight: FontWeight.w800),
-                              ),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shadowColor: isDark
+            ? Colors.transparent
+            : const Color(0xFF0F172A).withValues(alpha: 0.1),
+        child: InkWell(
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              height: 1.3,
                             ),
-                            ...tags.map((tag) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF0C4A6E) : const Color(0xFFF1F5F9),
-                                    border: Border.all(color: isDark ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0)),
-                                    borderRadius: BorderRadius.circular(8),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF082F49).withValues(alpha: 0.5)
+                                      : const Color(0xFFE1F5FE),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  date,
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                  child: Text(
-                                    tag.toString(),
-                                    style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                )),
-                          ],
+                                ),
+                              ),
+                              ...tags.map((tag) => Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF0C4A6E) : const Color(0xFFF1F5F9),
+                                      border: Border.all(
+                                        color: isDark ? const Color(0xFF0284C7) : const Color(0xFFE2E8F0),
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      tag.toString(),
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF475569),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Semantics(
+                      button: true,
+                      label: _isExpanded ? 'Collapse report details' : 'Expand report details',
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
+                        child: Text(
+                          _isExpanded ? 'Close ▴' : 'View ▾',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
-                    child: Text(
-                      _isExpanded ? 'Close ▴' : 'View ▾',
-                      style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Meta Row
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  Text('By: $author', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  Text('Blocks: ${blocks.length}', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  Text('Comments: ${comments.length}', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                ],
-              ),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              if (!_isExpanded)
-                _buildCollapsedInteractions(reactions, comments, isDark)
-              else
-                _buildExpandedContent(blocks, reactions, comments, isDark),
-            ],
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'By: $author',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Blocks: ${blocks.length}',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Comments: ${comments.length}',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (!_isExpanded)
+                  _buildCollapsedInteractions(reactions, comments, isDark)
+                else
+                  _buildExpandedContent(blocks, reactions, comments, isDark),
+              ],
+            ),
           ),
         ),
       ),

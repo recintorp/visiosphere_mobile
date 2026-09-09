@@ -158,133 +158,141 @@ class _RecentWeeksStripState extends State<RecentWeeksStrip> {
     final borderCol  = isDark ? AppColors.dashSurface  : const Color(0xFFDEEDF5);
     final labelColor = isDark ? AppColors.dashTextMuted : const Color(0xFF7A9AAD);
 
-    return Container(
-      decoration: BoxDecoration(
-        color:        cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border:       Border.all(color: borderCol),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.18)
-                : const Color(0xFF00A8E8).withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset:     const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 12, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'RECENT WEEKS',
-                        style: TextStyle(
-                          fontSize:      9,
-                          fontWeight:    FontWeight.w800,
-                          letterSpacing: 1.4,
-                          color:         labelColor,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 3, height: 3,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.dashSurface : const Color(0xFFB8DFF0),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Last 5 weeks',
-                        style: TextStyle(
-                          fontSize:   9,
-                          fontWeight: FontWeight.w600,
-                          color:      labelColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Was ~58x22dp with no name: below the 48dp Android minimum
-                // and announced as an unlabelled element. The chip looks the
-                // same; the padding grows the hit area to 48dp tall.
-                Semantics(
-                  button: true,
-                  label:  'View all alert history',
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                  onTap:    () => context.push('/admin/alert-history'),
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 15, 8, 15),
+    final recentWeeksLabel = _weeks == null || _weeks!.isEmpty
+        ? 'Recent weeks, last 5 weeks. No historical data available.'
+        : 'Recent weeks, last 5 weeks. ${_weeks!.map((week) => '${week.label}, ${week.total} alerts, ${_severityLabel(week.total)}').join('. ')}.';
+
+    return Semantics(
+      container: true,
+      label: recentWeeksLabel,
+      child: Container(
+        decoration: BoxDecoration(
+          color:        cardBg,
+          borderRadius: BorderRadius.circular(18),
+          border:       Border.all(color: borderCol),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.18)
+                  : const Color(0xFF00A8E8).withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset:     const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 12, 0),
+              child: Row(
+                children: [
+                  Expanded(
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
                         Text(
-                          'View All',
+                          'RECENT WEEKS',
                           style: TextStyle(
-                            fontSize:      10,
+                            fontSize:      9,
                             fontWeight:    FontWeight.w800,
-                            color:         Color(0xFF00A8E8),
-                            letterSpacing: 0.1,
+                            letterSpacing: 1.4,
+                            color:         labelColor,
                           ),
                         ),
-                        SizedBox(width: 2),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size:  9,
-                          color: Color(0xFF00A8E8),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 3, height: 3,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.dashSurface : const Color(0xFFB8DFF0),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Last 5 weeks',
+                          style: TextStyle(
+                            fontSize:   9,
+                            fontWeight: FontWeight.w600,
+                            color:      labelColor,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                ),
-              ],
+                  // Was ~58x22dp with no name: below the 48dp Android minimum
+                  // and announced as an unlabelled element. The chip looks the
+                  // same; the padding grows the hit area to 48dp tall.
+                  Semantics(
+                    button: true,
+                    label:  'View all alert history',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                    onTap:    () => context.push('/admin/alert-history'),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 15, 8, 15),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'View All',
+                            style: TextStyle(
+                              fontSize:      10,
+                              fontWeight:    FontWeight.w800,
+                              color:         Color(0xFF00A8E8),
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size:  9,
+                            color: Color(0xFF00A8E8),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Divider(color: isDark ? AppColors.dashSurface : const Color(0xFFDEEDF5), height: 1),
-          if (_loading)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              child: Center(
-                child: SizedBox(
-                  width: 16, height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: isDark ? AppColors.dashTextMuted : const Color(0xFFB8DFF0),
+            const SizedBox(height: 8),
+            Divider(color: isDark ? AppColors.dashSurface : const Color(0xFFDEEDF5), height: 1),
+            if (_loading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Center(
+                  child: SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: isDark ? AppColors.dashTextMuted : const Color(0xFFB8DFF0),
+                    ),
                   ),
                 ),
-              ),
-            )
-          else if (_weeks == null || _weeks!.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              child: Text(
-                'No historical data available',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor),
-              ),
-            )
-          else
-            ..._weeks!.asMap().entries.map((e) => _WeekRow(
-              summary: e.value,
-              isDark:  isDark,
-              isLast:  e.key == _weeks!.length - 1,
-              onTap:   () => context.push(
-                '/admin/alert-history',
-                extra: e.value.startISO,
-              ),
-            )),
-        ],
+              )
+            else if (_weeks == null || _weeks!.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                child: Text(
+                  'No historical data available',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: labelColor),
+                ),
+              )
+            else
+              ..._weeks!.asMap().entries.map((e) => _WeekRow(
+                summary: e.value,
+                isDark:  isDark,
+                isLast:  e.key == _weeks!.length - 1,
+                onTap:   () => context.push(
+                  '/admin/alert-history',
+                  extra: e.value.startISO,
+                ),
+              )),
+          ],
+        ),
       ),
     );
   }

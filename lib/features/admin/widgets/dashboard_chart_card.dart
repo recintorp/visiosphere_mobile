@@ -100,28 +100,34 @@ class DashboardChartCard extends StatelessWidget {
     final cardBg    = isDark ? AppColors.dashBg : Colors.white;
     final borderCol = isDark ? AppColors.dashSurface : const Color(0xFFDEEDF5);
 
-    return Container(
-      decoration: BoxDecoration(
-        color:        cardBg,
-        borderRadius: BorderRadius.circular(18),
-        border:       Border.all(color: borderCol),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.18)
-                : const Color(0xFF00A8E8).withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset:     const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(isDark, weeklyTotal, peakDay),
-          _buildChart(isDark, days),
-          const SizedBox(height: 4),
-        ],
+    final chartLabel = 'Alert analytics, 7 day overview, $weeklyTotal totals, peak day ${peakDay.name}.';
+
+    return Semantics(
+      container: true,
+      label: chartLabel,
+      child: Container(
+        decoration: BoxDecoration(
+          color:        cardBg,
+          borderRadius: BorderRadius.circular(18),
+          border:       Border.all(color: borderCol),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.18)
+                  : const Color(0xFF00A8E8).withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset:     const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(isDark, weeklyTotal, peakDay),
+            _buildChart(isDark, days),
+            const SizedBox(height: 4),
+          ],
+        ),
       ),
     );
   }
