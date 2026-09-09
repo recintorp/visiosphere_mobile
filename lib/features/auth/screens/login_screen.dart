@@ -16,6 +16,17 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+/// Body and label grey on the white sign-in card.
+///
+/// Accessibility Scanner flagged "Text contrast" on both credential fields.
+/// `Colors.blueGrey` is #607D8B, which measures 4.18:1 against the field fill
+/// #F8FAFC — just under the 4.5:1 WCAG AA asks for text at this size. This is
+/// blueGrey shade 700: same hue, 6.92:1.
+///
+/// Deliberately NOT applied to the checkbox border or the eye icons. Those are
+/// non-text, judged at 3:1, and #607D8B already clears that.
+const Color _kLabelGrey = Color(0xFF455A64);
+
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   String _currentView = 'login';
   String _otpStep = 'request';
@@ -388,7 +399,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       'By accessing this system, you agree that your actions may be monitored and recorded. You consent to the strict adherence to all operational protocols regarding patient and facility data confidentiality.\n\n'
                       'All personal and medical records contained within this dashboard are protected under national health information privacy laws. You agree to utilize this information solely for authorized care administration and acknowledge that improper sharing of this data will result in immediate termination of access and potential legal action.\n\n'
                       'If you require assistance or clarification regarding these policies, please contact your immediate supervisor or the Facility Administrator.',
-                      style: const TextStyle(color: Colors.blueGrey, height: 1.5),
+                      style: const TextStyle(color: _kLabelGrey, height: 1.5),
                     ),
                   ),
                 ),
@@ -808,7 +819,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       key: const ValueKey('login_form'),
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text('Sign In', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
+        // Heading and submit button both say "Sign In". Marking this as a
+        // header distinguishes them by role rather than renaming either.
+        Semantics(
+          header: true,
+          child: const Text('Sign In', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
+        ),
         const SizedBox(height: 32),
         TextFormField(
           controller: _idController,
@@ -816,7 +832,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             labelText: 'Email Address',
-            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -832,8 +848,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           style: const TextStyle(color: Color(0xFF0F172A)),
           decoration: InputDecoration(
             labelText: 'Password',
-            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
             suffixIcon: IconButton(
+              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
               icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.blueGrey, size: 20),
               onPressed: () { setState(() { _obscurePassword = !_obscurePassword; }); },
             ),
@@ -847,8 +864,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const SizedBox(height: 16),
         Row(
           children: [
+            // 48x48 is the Android minimum touch target. Checkbox already
+            // requests it via materialTapTargetSize; the old 24x24 SizedBox
+            // clipped the tap area down to the painted tick.
             SizedBox(
-              height: 24, width: 24,
+              height: 48, width: 48,
               child: Checkbox(
                 value: _rememberMe,
                 onChanged: isLoading
@@ -865,12 +885,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
             ),
-            const SizedBox(width: 8),
-            const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blueGrey)),
+            const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kLabelGrey)),
             const Spacer(),
             TextButton(
               onPressed: isLoading ? null : () { _switchView('forgot-password'); },
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              // shrinkWrap + Size.zero explicitly waived the 48dp minimum, leaving
+              // these links ~19dp tall. The text is unchanged; only the
+              // hit area grows back to the platform minimum.
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                minimumSize: const Size(48, 48),
+                tapTargetSize: MaterialTapTargetSize.padded,
+              ),
               child: const Text('Forgot password?', style: TextStyle(color: Color(0xFF00A8E8), fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ],
@@ -903,11 +929,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('First time user?', style: TextStyle(color: Colors.blueGrey, fontSize: 13)),
+            const Text('First time user?', style: TextStyle(color: _kLabelGrey, fontSize: 13)),
             const SizedBox(width: 4),
             TextButton(
               onPressed: isLoading ? null : () { _switchView('first-time'); },
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              // shrinkWrap + Size.zero explicitly waived the 48dp minimum, leaving
+              // these links ~19dp tall. The text is unchanged; only the
+              // hit area grows back to the platform minimum.
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                minimumSize: const Size(48, 48),
+                tapTargetSize: MaterialTapTargetSize.padded,
+              ),
               child: const Text('Account Setup', style: TextStyle(color: Color(0xFF00A8E8), fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ],
@@ -915,7 +948,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         const SizedBox(height: 16),
         TextButton(
           onPressed: isLoading ? null : () { _switchView('faqs'); },
-          child: const Text('Need Help?', style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w600, fontSize: 13)),
+          child: const Text('Need Help?', style: TextStyle(color: _kLabelGrey, fontWeight: FontWeight.w600, fontSize: 13)),
         ),
       ],
     );
@@ -933,7 +966,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           _otpStep == 'request' ? 'Enter your registered email address and role.'
           : _otpStep == 'verify' ? 'Enter the 6-digit secure code sent to your email.'
           : 'Create your new permanent password.',
-          style: const TextStyle(color: Colors.blueGrey, fontSize: 13),
+          style: const TextStyle(color: _kLabelGrey, fontSize: 13),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
@@ -944,7 +977,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16),
             decoration: InputDecoration(
               labelText: 'Account Type',
-              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -964,7 +997,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             style: const TextStyle(color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               labelText: 'Email Address',
-              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -1045,8 +1078,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             style: const TextStyle(color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               labelText: 'New Password',
-              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
               suffixIcon: IconButton(
+                tooltip: _obscureNew ? 'Show new password' : 'Hide new password',
                 icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility, color: Colors.blueGrey, size: 20),
                 onPressed: () { setState(() { _obscureNew = !_obscureNew; }); },
               ),
@@ -1065,8 +1099,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             style: const TextStyle(color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               labelText: 'Confirm Password',
-              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey),
+              labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _kLabelGrey),
               suffixIcon: IconButton(
+                tooltip: _obscureConfirm ? 'Show confirmed password' : 'Hide confirmed password',
                 icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility, color: Colors.blueGrey, size: 20),
                 onPressed: () { setState(() { _obscureConfirm = !_obscureConfirm; }); },
               ),
@@ -1112,7 +1147,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       children: [
         const Text('Security Check', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
         const SizedBox(height: 8),
-        const Text('Enter your 6-digit secure PIN.', style: TextStyle(color: Colors.blueGrey, fontSize: 13)),
+        const Text('Enter your 6-digit secure PIN.', style: TextStyle(color: _kLabelGrey, fontSize: 13)),
         const SizedBox(height: 32),
         TextFormField(
           controller: _twoFaController,
@@ -1130,6 +1165,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF00A8E8), width: 2)),
             contentPadding: const EdgeInsets.symmetric(vertical: 24),
             suffixIcon: IconButton(
+              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
               icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.blueGrey),
               onPressed: () { setState(() { _obscurePassword = !_obscurePassword; }); },
             ),
@@ -1162,7 +1198,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       children: [
         const Text('Having Troubles?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF00212E))),
         const SizedBox(height: 8),
-        const Text('Select an option below to recover your account.', style: TextStyle(color: Colors.blueGrey, fontSize: 13)),
+        const Text('Select an option below to recover your account.', style: TextStyle(color: _kLabelGrey, fontSize: 13)),
         const SizedBox(height: 32),
         OutlinedButton(
           onPressed: () { _switchView('forgot-password'); },
@@ -1208,7 +1244,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             children: [
               Text('How do I request an account?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00212E), fontSize: 14)),
               SizedBox(height: 8),
-              Text('Accounts are provisioned by your Facility Administrator. Contact them directly to receive your credentials.', style: TextStyle(fontSize: 13, color: Colors.blueGrey, height: 1.4)),
+              Text('Accounts are provisioned by your Facility Administrator. Contact them directly to receive your credentials.', style: TextStyle(fontSize: 13, color: _kLabelGrey, height: 1.4)),
             ],
           ),
         ),
@@ -1225,7 +1261,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             children: [
               Text('What is Account Setup?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00212E), fontSize: 14)),
               SizedBox(height: 8),
-              Text('A security process to establish a permanent password for newly provisioned employee or guardian accounts.', style: TextStyle(fontSize: 13, color: Colors.blueGrey, height: 1.4)),
+              Text('A security process to establish a permanent password for newly provisioned employee or guardian accounts.', style: TextStyle(fontSize: 13, color: _kLabelGrey, height: 1.4)),
             ],
           ),
         ),
