@@ -621,7 +621,11 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                         final nurse = nurses[index];
                         return FadeInUp(
                           duration: const Duration(milliseconds: 400),
-                          delay: Duration(milliseconds: index * 50),
+                          // Delay was `index * 50` — uncapped. Row 40 waited 2s before fading
+                          // in and row 100 waited 5s, so rows scrolled into view sat
+                          // blank and read as missing data. Only the first screenful
+                          // staggers now; everything after it appears at once.
+                          delay: Duration(milliseconds: (index < 8 ? index : 0) * 50),
                           child: NurseCard(
                             nurse: nurse,
                             onTap: () {
