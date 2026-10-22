@@ -318,58 +318,67 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: (val) => provider.setSearchQuery(val),
-                            style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w500, fontSize: 14, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                            decoration: InputDecoration(
-                              hintText: 'Search event, actor...',
-                              hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14, fontFamily: 'Montserrat'),
-                              prefixIcon: Icon(Icons.search, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Semantics(
+                          textField: true,
+                          label: 'Search audit logs. ${_searchController.text.isEmpty ? 'Search event, actor, category, or status.' : 'Current search text: ${_searchController.text}.'}',
+                          child: Container(
+                            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: (val) => provider.setSearchQuery(val),
+                              style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w500, fontSize: 14, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                              decoration: InputDecoration(
+                                hintText: 'Search event, actor...',
+                                hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14, fontFamily: 'Montserrat'),
+                                prefixIcon: Icon(Icons.search, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-                        child: IconButton(
-                          tooltip: 'Filter options',
-                          icon: Icon(Icons.tune_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                          onPressed: () => _showFilterSheet(context, provider, isDark),
+                      Semantics(
+                        button: true,
+                        label: 'Filter audit logs',
+                        child: Container(
+                          decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                          child: IconButton(
+                            tooltip: 'Filter options',
+                            icon: Icon(Icons.tune_rounded, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                            onPressed: () => _showFilterSheet(context, provider, isDark),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(color: const Color(0xFF00A8E8), borderRadius: BorderRadius.circular(12)),
-                        child: IconButton(
-                          tooltip: 'Export logs',
-                          icon: const Icon(Icons.download_rounded, color: Colors.white),
-                          onPressed: () async {
-                            final result = await provider.exportToCSV();
-                            if (!context.mounted) return;
+                      Semantics(
+                        button: true,
+                        label: 'Export audit logs',
+                        child: Container(
+                          decoration: BoxDecoration(color: const Color(0xFF00A8E8), borderRadius: BorderRadius.circular(12)),
+                          child: IconButton(
+                            tooltip: 'Export logs',
+                            icon: const Icon(Icons.download_rounded, color: Colors.white),
+                            onPressed: () async {
+                              final result = await provider.exportToCSV();
+                              if (!context.mounted) return;
 
-                            // Four outcomes, four messages. Backing out of the
-                            // save dialog is a choice, not a failure, and used
-                            // to be announced as one.
-                            switch (result.status) {
-                              case AuditExportStatus.saved:
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audit trail saved to ${result.path}', style: const TextStyle(fontFamily: 'Montserrat')), backgroundColor: const Color(0xFF10B981)));
-                                break;
-                              case AuditExportStatus.cancelled:
-                                break;
-                              case AuditExportStatus.empty:
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nothing to export — no logs match the current filters.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
-                                break;
-                              case AuditExportStatus.failed:
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to export the audit trail.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
-                                break;
-                            }
-                          },
+                              switch (result.status) {
+                                case AuditExportStatus.saved:
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audit trail saved to ${result.path}', style: const TextStyle(fontFamily: 'Montserrat')), backgroundColor: const Color(0xFF10B981)));
+                                  break;
+                                case AuditExportStatus.cancelled:
+                                  break;
+                                case AuditExportStatus.empty:
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nothing to export — no logs match the current filters.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
+                                  break;
+                                case AuditExportStatus.failed:
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to export the audit trail.', style: TextStyle(fontFamily: 'Montserrat')), backgroundColor: Color(0xFFE11D48)));
+                                  break;
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ],
@@ -380,14 +389,22 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Showing ${provider.filteredLogs.length} results', style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold)),
+                      Semantics(
+                        container: true,
+                        label: 'Showing ${provider.filteredLogs.length} audit log results.',
+                        child: Text('Showing ${provider.filteredLogs.length} results', style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
                       if (provider.filterCategory != 'All' || provider.filterStatus != 'All' || provider.dateFilter != 'all')
-                        GestureDetector(
-                          onTap: () {
-                            provider.clearFilters();
-                            _searchController.clear();
-                          },
-                          child: Text('Clear Filters', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48), fontSize: 12, fontWeight: FontWeight.bold)),
+                        Semantics(
+                          button: true,
+                          label: 'Clear all filters',
+                          child: GestureDetector(
+                            onTap: () {
+                              provider.clearFilters();
+                              _searchController.clear();
+                            },
+                            child: Text('Clear Filters', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFFFB7185) : const Color(0xFFE11D48), fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
                         )
                     ],
                   ),
@@ -414,64 +431,72 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
                                 final statusColor = _getStatusColor(log['status']?.toString(), isDark);
                                 final statusBgColor = _getStatusBgColor(log['status']?.toString(), isDark);
 
+                                final cardSummary = '${log['event']?.toString() ?? 'Unknown Event'}, ${log['actorName']?.toString() ?? 'System'}, ${log['category']?.toString() ?? 'General'}, ${log['status']?.toString() ?? 'Unknown'}, ${_formatDate(log['createdAt']?.toString() ?? log['timestamp']?.toString())}, view details.';
+
                                 return FadeInUp(
                                   duration: const Duration(milliseconds: 300),
                                   delay: Duration(milliseconds: (index < 10 ? index : 0) * 40),
-                                  child: GestureDetector(
-                                    onTap: () => _showLogDetails(context, log),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 8, offset: const Offset(0, 4))],
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(20.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  child: Semantics(
+                                    button: true,
+                                    label: cardSummary,
+                                    child: MergeSemantics(
+                                      child: GestureDetector(
+                                        onTap: () => _showLogDetails(context, log),
+                                        child: Container(
+                                          margin: const EdgeInsets.only(bottom: 12),
+                                          decoration: BoxDecoration(
+                                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 8, offset: const Offset(0, 4))],
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(20.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(_formatDate(log['createdAt']?.toString() ?? log['timestamp']?.toString()), style: TextStyle(fontFamily: 'Montserrat', fontSize: 11, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                  decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(6)),
-                                                  child: Text((log['status']?.toString() ?? 'Unknown').toUpperCase(), style: TextStyle(fontFamily: 'Montserrat', color: statusColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Text(_formatDate(log['createdAt']?.toString() ?? log['timestamp']?.toString()), style: TextStyle(fontFamily: 'Montserrat', fontSize: 11, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                      decoration: BoxDecoration(color: statusBgColor, borderRadius: BorderRadius.circular(6)),
+                                                      child: Text((log['status']?.toString() ?? 'Unknown').toUpperCase(), style: TextStyle(fontFamily: 'Montserrat', color: statusColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Text(log['event']?.toString() ?? 'Unknown Event', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                Icon(Icons.person_rounded, size: 14, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                                                const SizedBox(width: 6),
-                                                Text(log['actorName']?.toString() ?? 'System', style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                  decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                                                  child: Text(log['category']?.toString() ?? 'General', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                                ),
+                                                const SizedBox(height: 12),
+                                                Text(log['event']?.toString() ?? 'Unknown Event', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                                                const SizedBox(height: 6),
                                                 Row(
                                                   children: [
-                                                    Text('View Details', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))),
-                                                    const SizedBox(width: 4),
-                                                    Icon(Icons.arrow_forward_ios_rounded, size: 12, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                                                    Icon(Icons.person_rounded, size: 14, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                                    const SizedBox(width: 6),
+                                                    Text(log['actorName']?.toString() ?? 'System', style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 16),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                      decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                                                      child: Text(log['category']?.toString() ?? 'General', style: TextStyle(fontFamily: 'Montserrat', color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Text('View Details', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))),
+                                                        const SizedBox(width: 4),
+                                                        Icon(Icons.arrow_forward_ios_rounded, size: 12, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                                                      ],
+                                                    ),
                                                   ],
                                                 ),
                                               ],
                                             ),
-                                          ],
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -490,16 +515,20 @@ class _AdminAuditScreenState extends State<AdminAuditScreen> {
 
   Widget _buildStatBadge(String label, String value, Color color, Color bgColor, bool isDark) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: isDark ? 0.3 : 0.2))),
-        child: Column(
-          children: [
-            Text(value, style: TextStyle(fontFamily: 'Montserrat', fontSize: 24, fontWeight: FontWeight.w900, color: color)),
-            const SizedBox(height: 4),
-            Text(label.toUpperCase(), style: TextStyle(fontFamily: 'Montserrat', fontSize: 10, fontWeight: FontWeight.w800, color: color.withValues(alpha: 0.8), letterSpacing: 0.5)),
-          ],
+      child: Semantics(
+        container: true,
+        label: '$label $value',
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: isDark ? 0.3 : 0.2))),
+          child: Column(
+            children: [
+              Text(value, style: TextStyle(fontFamily: 'Montserrat', fontSize: 24, fontWeight: FontWeight.w900, color: color)),
+              const SizedBox(height: 4),
+              Text(label.toUpperCase(), style: TextStyle(fontFamily: 'Montserrat', fontSize: 10, fontWeight: FontWeight.w800, color: color.withValues(alpha: 0.8), letterSpacing: 0.5)),
+            ],
+          ),
         ),
       ),
     );

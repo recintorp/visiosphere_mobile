@@ -364,7 +364,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               Scaffold.of(context).openDrawer();
             },
           ),
-          Image.asset('assets/images/visio.png', semanticLabel: 'VisioSphere', height: 36, color: isDark ? Colors.white : null, errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported)),
+          ExcludeSemantics(
+            child: Image.asset(
+              'assets/images/visio.png',
+              height: 36,
+              color: isDark ? Colors.white : null,
+              errorBuilder: (c, e, s) => const Icon(Icons.image_not_supported),
+            ),
+          ),
           // Was a bare Icon — drawn, but not tappable. See alerts_sheet.dart.
           NotificationBellButton(
             color: isDark ? Colors.white : const Color(0xFF00A8E8),
@@ -518,14 +525,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CURRENT ADDRESS', style: labelStyle),
-          const SizedBox(height: 8),
-          Text(
-            provider.email.isEmpty ? 'Not set' : provider.email,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+          Semantics(
+            container: true,
+            label: 'Current address. ${provider.email.isEmpty ? 'Not set.' : provider.email}.',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('CURRENT ADDRESS', style: labelStyle),
+                const SizedBox(height: 8),
+                Text(
+                  provider.email.isEmpty ? 'Not set' : provider.email,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -768,46 +784,64 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('DISPLAY NAME', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _displayNameController,
-                style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
-                decoration: InputDecoration(
-                  isDense: true, 
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), width: 2)),
+              Semantics(
+                container: true,
+                label: 'Display name field. ${_displayNameController.text.isEmpty ? 'No display name entered yet.' : 'Current value: ${_displayNameController.text}.'}',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('DISPLAY NAME', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _displayNameController,
+                      style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14),
+                      decoration: InputDecoration(
+                        isDense: true, 
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8), width: 2)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
-              Text('INTERFACE THEME', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)), borderRadius: BorderRadius.circular(8), color: isDark ? const Color(0xFF1E293B) : Colors.white),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true, value: _selectedTheme,
-                    dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    iconEnabledColor: isDark ? Colors.white : const Color(0xFF0F172A),
-                    style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14, fontFamily: 'Montserrat'),
-                    items: const [
-                      DropdownMenuItem(value: 'light', child: Text('Light Mode')),
-                      DropdownMenuItem(value: 'dark', child: Text('Dark Mode')),
-                      DropdownMenuItem(value: 'default', child: Text('System Default')),
-                    ],
-                    onChanged: (val) { 
-                      if (val != null) {
-                        setState(() {
-                          _selectedTheme = val;
-                        });
-                      }
-                    },
-                  ),
+              Semantics(
+                container: true,
+                label: 'Interface theme option. Current selection: ${_selectedTheme == 'light' ? 'Light Mode' : (_selectedTheme == 'dark' ? 'Dark Mode' : 'System Default')}.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('INTERFACE THEME', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10, color: isDark ? const Color(0xFF64748B) : const Color(0xFF475569), letterSpacing: 1.0)),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)), borderRadius: BorderRadius.circular(8), color: isDark ? const Color(0xFF1E293B) : Colors.white),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true, value: _selectedTheme,
+                          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          iconEnabledColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                          style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14, fontFamily: 'Montserrat'),
+                          items: const [
+                            DropdownMenuItem(value: 'light', child: Text('Light Mode')),
+                            DropdownMenuItem(value: 'dark', child: Text('Dark Mode')),
+                            DropdownMenuItem(value: 'default', child: Text('System Default')),
+                          ],
+                          onChanged: (val) { 
+                            if (val != null) {
+                              setState(() {
+                                _selectedTheme = val;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -1082,74 +1116,78 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        Container(
-          decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)))),
-                child: Row(
-                  children: [
-                    Icon(Icons.lock_outline, color: isDark ? Colors.white : const Color(0xFF00212E), size: 24),
-                    const SizedBox(width: 12),
-                    Text('Global Data Compliance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF00212E))),
-                  ],
+        Semantics(
+          container: true,
+          label: 'Global Data Compliance section. System policies are strictly locked by the Principal Administrator to ensure legal compliance. CCTV Video Retention Policy: ${provider.videoRetentionDays} days. Audit Trail Auto-Archive: ${provider.auditArchiveDays} days.',
+          child: Container(
+            decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)))),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock_outline, color: isDark ? Colors.white : const Color(0xFF00212E), size: 24),
+                      const SizedBox(width: 12),
+                      Text('Global Data Compliance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF00212E))),
+                    ],
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity, padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: isDark ? const Color(0xFF451A03).withValues(alpha: 0.3) : const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFFB45309).withValues(alpha: 0.5) : const Color(0xFFFDE68A))),
-                      child: Row(
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity, padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: isDark ? const Color(0xFF451A03).withValues(alpha: 0.3) : const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFFB45309).withValues(alpha: 0.5) : const Color(0xFFFDE68A))),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Color(0xFFD97706), size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text('System policies are strictly locked by the Principal Administrator to ensure legal compliance.', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309), fontSize: 13))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Text('CCTV Video Retention Policy', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                      const SizedBox(height: 4),
+                      Text('Automatic permanent deletion cycle for recorded facility footage.', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
+                      const SizedBox(height: 12),
+                      Row(
                         children: [
-                          const Icon(Icons.info_outline, color: Color(0xFFD97706), size: 20),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                            child: Text('${provider.videoRetentionDays} Days', style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: Text('System policies are strictly locked by the Principal Administrator to ensure legal compliance.', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309), fontSize: 13))),
+                          Text('SYSTEM LOCKED', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), letterSpacing: 1.0)),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text('CCTV Video Retention Policy', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                    const SizedBox(height: 4),
-                    Text('Automatic permanent deletion cycle for recorded facility footage.', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-                          child: Text('${provider.videoRetentionDays} Days', style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('SYSTEM LOCKED', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), letterSpacing: 1.0)),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    Text('Audit Trail Auto-Archive', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                    const SizedBox(height: 4),
-                    Text('Timeframe before activity logs are permanently purged from the active database.', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-                          child: Text('${provider.auditArchiveDays} Days', style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('SYSTEM LOCKED', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), letterSpacing: 1.0)),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 32),
+                      Text('Audit Trail Auto-Archive', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF0F172A))),
+                      const SizedBox(height: 4),
+                      Text('Timeframe before activity logs are permanently purged from the active database.', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+                            child: Text('${provider.auditArchiveDays} Days', style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14)),
+                          ),
+                          const SizedBox(width: 12),
+                          Text('SYSTEM LOCKED', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), letterSpacing: 1.0)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -1157,19 +1195,25 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Widget _buildCard({required String title, required Widget child, required bool isDark}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity, padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)))),
-            child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF00212E))),
+    return Semantics(
+      container: true,
+      label: title,
+      child: MergeSemantics(
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(color: isDark ? const Color(0xFF1E293B) : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)), boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity, padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)))),
+                child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF00212E))),
+              ),
+              Padding(padding: const EdgeInsets.all(20), child: child),
+            ],
           ),
-          Padding(padding: const EdgeInsets.all(20), child: child),
-        ],
+        ),
       ),
     );
   }

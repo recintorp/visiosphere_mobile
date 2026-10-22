@@ -11,6 +11,8 @@ class VideoClipsToolbar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final String sortBy;
   final ValueChanged<String> onSortChanged;
+  final Widget? leftBelowDate;
+  final Widget? rightBelowSort;
 
   const VideoClipsToolbar({
     super.key,
@@ -18,6 +20,8 @@ class VideoClipsToolbar extends StatelessWidget {
     required this.onSearchChanged,
     required this.sortBy,
     required this.onSortChanged,
+    this.leftBelowDate,
+    this.rightBelowSort,
   });
 
   @override
@@ -25,18 +29,18 @@ class VideoClipsToolbar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
     final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final activeSort = VideoClipsProvider.sortOptions
-        .firstWhere((o) => o.id == sortBy,
-            orElse: () => VideoClipsProvider.sortOptions.first);
+    final activeSort = VideoClipsProvider.sortOptions.firstWhere(
+      (o) => o.id == sortBy,
+      orElse: () => VideoClipsProvider.sortOptions.first,
+    );
 
     return Semantics(
       container: true,
-      label: 'Video clips toolbar',
       child: Column(
         children: [
           Semantics(
             textField: true,
-            label: 'Search clips by event, camera or date',
+            label: 'Search event, camera or date',
             child: Container(
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -53,8 +57,10 @@ class VideoClipsToolbar extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   border: InputBorder.none,
                   hintText: 'Search event, camera or date',
                   hintStyle: TextStyle(
@@ -63,7 +69,11 @@ class VideoClipsToolbar extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: muted,
                   ),
-                  prefixIcon: Icon(Icons.search_rounded, size: 18, color: muted),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 18,
+                    color: muted,
+                  ),
                 ),
               ),
             ),
@@ -84,61 +94,104 @@ class VideoClipsToolbar extends StatelessWidget {
                     color: muted,
                   ),
                 ),
-                const Spacer(),
-                Semantics(
-                  button: true,
-                  label: 'Sort clips, currently ${activeSort.label}',
-                  child: PopupMenuButton<String>(
-                    initialValue: sortBy,
-                    onSelected: onSortChanged,
-                    tooltip: 'Sort clips, currently ${activeSort.label}',
-                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    itemBuilder: (context) => VideoClipsProvider.sortOptions
-                        .map((o) => PopupMenuItem<String>(
-                              value: o.id,
-                              child: Text(
-                                o.label,
-                                style: TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      alignment: Alignment.center,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: border),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.sort_rounded, size: 14, color: muted),
-                          const SizedBox(width: 6),
-                          Text(
-                            activeSort.label,
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
-                            ),
-                          ),
-                          Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: muted),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (leftBelowDate != null) ...[
+                Expanded(child: leftBelowDate!),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        button: true,
+                        label: 'Sort clips, currently ${activeSort.label}',
+                        child: PopupMenuButton<String>(
+                          initialValue: sortBy,
+                          onSelected: onSortChanged,
+                          tooltip: 'Sort clips, currently ${activeSort.label}',
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : Colors.white,
+                          itemBuilder: (context) => VideoClipsProvider
+                              .sortOptions
+                              .map(
+                                (o) => PopupMenuItem<String>(
+                                  value: o.id,
+                                  child: Text(
+                                    o.label,
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: border),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.sort_rounded,
+                                  size: 14,
+                                  color: muted,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  activeSort.label,
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 16,
+                                  color: muted,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (rightBelowSort != null) ...[
+                      const SizedBox(width: 10),
+                      Expanded(child: rightBelowSort!),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

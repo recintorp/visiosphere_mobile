@@ -478,7 +478,7 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
               child: Column(
                 children: [
                   Semantics(
-                    label: 'Search by nurse ID or name',
+                    label: 'Search by Nurse ID or Name',
                     textField: true,
                     child: Container(
                       constraints: const BoxConstraints(minHeight: 48),
@@ -510,14 +510,17 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                     height: 48,
                     child: Row(
                       children: [
-                        InkWell(
-                          onTap: () {
-                            context.read<AdminNursesProvider>().toggleSortOrder();
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 48),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                        Semantics(
+                          button: true,
+                          label: 'Sort nurses',
+                          child: InkWell(
+                            onTap: () {
+                              context.read<AdminNursesProvider>().toggleSortOrder();
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
                               color: isDark ? const Color(0xFF1E293B) : Colors.white,
                               boxShadow: [
@@ -525,21 +528,22 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
                               ],
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            alignment: Alignment.center,
-                            child: Row(
-                              children: [
-                                Icon(Icons.sort_by_alpha_rounded, size: 16, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Sort',
-                                  style: TextStyle(
-                                    fontFamily: 'Montserrat',
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
+                              alignment: Alignment.center,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.sort_by_alpha_rounded, size: 16, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Sort',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -655,29 +659,34 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
 
   Widget _buildFilterPill(String status, AdminNursesProvider provider, bool isDark) {
     final isActive = provider.filterStatus == status;
-    return GestureDetector(
-      onTap: () => provider.setFilterStatus(status),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 48,
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        decoration: BoxDecoration(
+    return Semantics(
+      button: true,
+      selected: isActive,
+      label: 'Filter nurses by ${status.toLowerCase()}',
+      child: GestureDetector(
+        onTap: () => provider.setFilterStatus(status),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          decoration: BoxDecoration(
           color: isActive ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)) : (isDark ? const Color(0xFF1E293B) : Colors.white),
           borderRadius: BorderRadius.circular(20),
           boxShadow: isActive
               ? [BoxShadow(color: (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A)).withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))]
               : [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
         ),
-        alignment: Alignment.center,
-        child: Text(
-          status.toUpperCase(),
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: isActive ? (isDark ? const Color(0xFF0F172A) : Colors.white) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-            letterSpacing: 0.5,
+          alignment: Alignment.center,
+          child: Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: isActive ? (isDark ? const Color(0xFF0F172A) : Colors.white) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ),
@@ -696,14 +705,15 @@ class _AdminNursesScreenState extends State<AdminNursesScreen>
             icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
-          Image.asset(
-            'assets/images/visio.png',
-            semanticLabel: 'VisioSphere',
-            height: 34,
-            fit: BoxFit.contain,
-            color: isDark ? Colors.white : const Color(0xFF0066CC),
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
+          ExcludeSemantics(
+            child: Image.asset(
+              'assets/images/visio.png',
+              height: 34,
+              fit: BoxFit.contain,
+              color: isDark ? Colors.white : const Color(0xFF0066CC),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
+            ),
           ),
           // Was an IconButton with `onPressed: () {}` and a red dot that was
           // painted whether or not anything was unread. See alerts_sheet.dart.

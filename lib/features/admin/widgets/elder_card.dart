@@ -58,9 +58,10 @@ class ElderCard extends StatelessWidget {
       container: true,
       button: true,
       label: spoken.toString(),
-      child: GestureDetector(
-      onTap: onTap,
-      child: Container(
+      child: MergeSemantics(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
@@ -256,7 +257,8 @@ class ElderCard extends StatelessWidget {
           ],
         ),
       ),
-    ),
+        ),
+      ),
     );
   }
 }

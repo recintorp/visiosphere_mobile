@@ -386,30 +386,31 @@ class _AssessmentHistoryCardState extends State<AssessmentHistoryCard> {
       container: true,
       button: true,
       label: cardSummary,
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 16),
-        elevation: _isExpanded ? (isDark ? 0 : 8) : 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: _isExpanded
-                ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-            width: _isExpanded ? 2 : 1,
+      child: MergeSemantics(
+        child: Card(
+          margin: const EdgeInsets.only(bottom: 16),
+          elevation: _isExpanded ? (isDark ? 0 : 8) : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: _isExpanded
+                  ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8))
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: _isExpanded ? 2 : 1,
+            ),
           ),
-        ),
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        shadowColor: isDark
-            ? Colors.transparent
-            : const Color(0xFF0F172A).withValues(alpha: 0.1),
-        child: InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shadowColor: isDark
+              ? Colors.transparent
+              : const Color(0xFF0F172A).withValues(alpha: 0.1),
+          child: InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -540,7 +541,8 @@ class _AssessmentHistoryCardState extends State<AssessmentHistoryCard> {
                   _buildCollapsedInteractions(reactions, comments, isDark)
                 else
                   _buildExpandedContent(blocks, reactions, comments, isDark),
-              ],
+                ],
+              ),
             ),
           ),
         ),

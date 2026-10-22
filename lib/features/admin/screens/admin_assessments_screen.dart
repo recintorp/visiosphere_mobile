@@ -140,39 +140,65 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
       child: Semantics(
         container: true,
         label: _selectedResidentId == null
-            ? 'Select a resident'
-            : 'Selected resident $selectedResidentName',
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1), width: 1.5),
-          boxShadow: [
-            BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
-          ]
-        ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-              hint: Text('Select a Resident...', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-              value: _selectedResidentId,
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
-              items: residents.map((r) {
-                final id = r['_id'] ?? r['residentId'];
-                return DropdownMenuItem<String>(
-                  value: id.toString(),
-                  child: Text('${r['firstName']} ${r['lastName']}', style: TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF0F172A))),
-                );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  _selectedResidentId = val;
-                });
-                if (val != null) context.read<AdminAssessmentsProvider>().fetchAssessments(val);
-              },
+            ? 'Resident selector. Select a resident.'
+            : 'Resident selector. Selected resident $selectedResidentName.',
+        child: MergeSemantics(
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                hint: Text(
+                  'Select a Resident...',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                value: _selectedResidentId,
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8),
+                ),
+                items: residents.map((r) {
+                  final id = r['_id'] ?? r['residentId'];
+                  return DropdownMenuItem<String>(
+                    value: id.toString(),
+                    child: Text(
+                      '${r['firstName']} ${r['lastName']}',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedResidentId = val;
+                  });
+                  if (val != null) context.read<AdminAssessmentsProvider>().fetchAssessments(val);
+                },
+              ),
             ),
           ),
         ),
@@ -182,65 +208,74 @@ class _AdminAssessmentsScreenState extends State<AdminAssessmentsScreen> {
 
   Widget _buildAssessmentHistory(AdminAssessmentsProvider provider, bool isDark) {
     if (_selectedResidentId == null) {
+      final emptyStateSummary =
+          'No resident selected. Please choose a resident from the dropdown menu above to securely view or add new daily assessment reports.';
+
       return Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
           child: FadeInUp(
             duration: const Duration(milliseconds: 600),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0xFF00A8E8).withValues(alpha: 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
+            child: Semantics(
+              container: true,
+              label: emptyStateSummary,
+              child: MergeSemantics(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0xFF00A8E8).withValues(alpha: 0.08),
+                        blurRadius: 24,
+                        offset: const Offset(0, 12),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.5) : const Color(0xFFF0F9FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.folder_shared_rounded, size: 64, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF082F49).withValues(alpha: 0.5) : const Color(0xFFF0F9FF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.folder_shared_rounded, size: 64, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'No Resident Selected',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Please choose a resident from the dropdown menu above to securely view or add new daily assessment reports.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 14,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Pulse(
+                        infinite: true,
+                        child: Icon(Icons.keyboard_double_arrow_up_rounded, size: 32, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'No Resident Selected',
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Please choose a resident from the dropdown menu above to securely view or add new daily assessment reports.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Montserrat',
-                      fontSize: 14,
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Pulse(
-                    infinite: true,
-                    child: Icon(Icons.keyboard_double_arrow_up_rounded, size: 32, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

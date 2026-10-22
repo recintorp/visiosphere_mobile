@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/constants/facilities.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../models/video_clip.dart';
 import '../providers/video_clips_provider.dart';
 import '../widgets/delete_clip_dialog.dart';
@@ -62,7 +64,8 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
     final done = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
-      builder: (_) => DeleteClipDialog(clips: clips, onConfirm: provider.removeClips),
+      builder: (_) =>
+          DeleteClipDialog(clips: clips, onConfirm: provider.removeClips),
     );
 
     if (done == true) {
@@ -72,7 +75,10 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             clips.length > 1
                 ? '${clips.length} recordings deleted.'
                 : 'Recording deleted.',
-            style: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+            ),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -103,7 +109,13 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
   }
 
   Widget _buildHeader(
-      BuildContext context, VideoClipsProvider provider, bool isDark) {
+    BuildContext context,
+    VideoClipsProvider provider,
+    bool isDark,
+  ) {
+    final showLocationFilters =
+        context.read<AuthProvider>().facility != Facilities.saintAnthony;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
@@ -126,20 +138,26 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF8FAFC),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF334155)
-                          : const Color(0xFFE2E8F0)),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
+                  ),
                 ),
                 child: IconButton(
                   tooltip: 'Open navigation menu',
-                  icon: Icon(Icons.menu_rounded,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                      size: 22),
+                  icon: Icon(
+                    Icons.menu_rounded,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    size: 22,
+                  ),
                   onPressed:
-                      widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
+                      widget.onMenuTap ??
+                      () => Scaffold.of(context).openDrawer(),
                   padding: const EdgeInsets.all(8),
                   constraints: const BoxConstraints(),
                 ),
@@ -158,7 +176,9 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                     ),
@@ -179,7 +199,9 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
               IconButton(
                 onPressed: provider.isLoading ? null : provider.load,
                 icon: const Icon(Icons.refresh_rounded, size: 20),
-                color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8),
+                color: isDark
+                    ? const Color(0xFF38BDF8)
+                    : const Color(0xFF00A8E8),
                 tooltip: 'Reload clips',
               ),
             ],
@@ -195,20 +217,16 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             onSearchChanged: provider.setSearch,
             sortBy: provider.sortBy,
             onSortChanged: provider.setSortBy,
-          ),
-          // Sits directly under the sort menu, right-aligned to it. Selection
-          // controls are only offered to users who may actually delete —
-          // showing "Select to delete" to someone whose every delete returns
-          // 403 is worse than not showing it at all.
-          if (provider.canDelete) ...[
-            const SizedBox(height: 10),
-            _buildSelectionControls(provider, isDark),
-          ],
-          const SizedBox(height: 12),
-          HouseSelector(
-            houses: provider.houses,
-            selectedHouseId: provider.selectedHouseId,
-            onSelect: provider.setSelectedHouseId,
+            leftBelowDate: showLocationFilters
+                ? HouseSelector(
+                    houses: provider.houses,
+                    selectedHouseId: provider.selectedHouseId,
+                    onSelect: provider.setSelectedHouseId,
+                  )
+                : null,
+            rightBelowSort: provider.canDelete
+                ? _buildSelectionControls(provider, isDark)
+                : null,
           ),
         ],
       ),
@@ -220,25 +238,33 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
 
     if (!provider.selectionMode) {
       return Align(
-        alignment: Alignment.centerRight,
-        child: OutlinedButton.icon(
-          onPressed: () => provider.setSelectionMode(true),
-          icon: const Icon(Icons.checklist_rounded, size: 16),
-          label: const Text(
-            'Select to delete',
-            style: TextStyle(
+        alignment: Alignment.center,
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => provider.setSelectionMode(true),
+            icon: const Icon(Icons.checklist_rounded, size: 16),
+            label: const Text(
+              'Select to delete',
+              style: TextStyle(
                 fontFamily: 'Montserrat',
                 fontSize: 11.5,
-                fontWeight: FontWeight.w800),
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: isDark ? Colors.white : const Color(0xFF00212E),
-            side: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            minimumSize: const Size(48, 48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? Colors.white : const Color(0xFF00212E),
+              side: BorderSide(
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              minimumSize: const Size(48, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
         ),
       );
@@ -262,12 +288,15 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             minimumSize: const Size(48, 48),
             tapTargetSize: MaterialTapTargetSize.padded,
           ),
-          child: Text('Select all',
-              style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: muted)),
+          child: Text(
+            'Select all',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: muted,
+            ),
+          ),
         ),
         TextButton(
           onPressed: provider.exitSelectionMode,
@@ -275,12 +304,15 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             minimumSize: const Size(48, 48),
             tapTargetSize: MaterialTapTargetSize.padded,
           ),
-          child: Text('Cancel',
-              style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: muted)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: muted,
+            ),
+          ),
         ),
         const SizedBox(width: 4),
         ElevatedButton(
@@ -293,14 +325,18 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             minimumSize: const Size(48, 48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          child: const Text('Delete',
-              style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800)),
+          child: const Text(
+            'Delete',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ],
     );
@@ -316,14 +352,19 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
               width: 36,
               height: 36,
               child: CircularProgressIndicator(
-                  color: Color(0xFF00A8E8), strokeWidth: 3),
+                color: Color(0xFF00A8E8),
+                strokeWidth: 3,
+              ),
             ),
             SizedBox(height: 12),
-            Text('Loading clips...',
-                style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700)),
+            Text(
+              'Loading clips...',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       );
@@ -353,27 +394,33 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.videocam_off_outlined,
-                size: 44,
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFCBD5E1)),
+            Icon(
+              Icons.videocam_off_outlined,
+              size: 44,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+            ),
             const SizedBox(height: 12),
-            Text('No clips found',
-                style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A))),
+            Text(
+              'No clips found',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Try adjusting your filters or search.',
-                style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? const Color(0xFF64748B)
-                        : const Color(0xFF94A3B8))),
+            Text(
+              'Try adjusting your filters or search.',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
           ],
         ),
       );
@@ -422,8 +469,7 @@ class _VideoClipsScreenState extends State<VideoClipsScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,

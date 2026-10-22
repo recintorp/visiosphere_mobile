@@ -65,9 +65,14 @@ class _TagInputState extends State<TagInput> {
         .where((s) => !widget.tags.contains(s) && s.toLowerCase().contains(_controller.text.toLowerCase()))
         .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return Semantics(
+      container: true,
+      label: widget.tags.isEmpty
+          ? 'Tags field. No tags added yet.'
+          : 'Tags field. Current tags: ${widget.tags.join(', ')}.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Container(
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
@@ -174,7 +179,8 @@ class _TagInputState extends State<TagInput> {
               },
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -381,29 +387,39 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _titleController,
-                  onChanged: (_) {
-                    if (_titleError != null) setState(() => _titleError = null);
-                  },
-                  style: TextStyle(fontFamily: 'Montserrat', fontSize: 22.0, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
-                  decoration: InputDecoration(
-                    hintText: 'Document Title...',
-                    hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
-                    border: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                Semantics(
+                  container: true,
+                  label: 'Document title input. ${_titleController.text.trim().isEmpty ? 'Required field.' : 'Current title: ${_titleController.text.trim()}.'}',
+                  child: TextField(
+                    controller: _titleController,
+                    onChanged: (_) {
+                      if (_titleError != null) setState(() => _titleError = null);
+                    },
+                    style: TextStyle(fontFamily: 'Montserrat', fontSize: 22.0, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: 'Document Title...',
+                      hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                    ),
                   ),
                 ),
                 if (_titleError != null)
                   InlineErrorBanner(message: _titleError!, isDark: isDark, topMargin: 4),
-                TagInput(
-                  tags: provider.reportTags,
-                  onChange: (newTags) => provider.setReportTags(newTags),
-                  suggestions: _predefinedTags,
-                  isDark: isDark,
+                Semantics(
+                  container: true,
+                  label: provider.reportTags.isEmpty
+                      ? 'Tags section. No tags added yet.'
+                      : 'Tags section. Current tags: ${provider.reportTags.join(', ')}.',
+                  child: TagInput(
+                    tags: provider.reportTags,
+                    onChange: (newTags) => provider.setReportTags(newTags),
+                    suggestions: _predefinedTags,
+                    isDark: isDark,
+                  ),
                 ),
                 if (_saveError != null)
                   InlineErrorBanner(message: _saveError!, isDark: isDark, topMargin: 12),
@@ -517,6 +533,7 @@ class _AssessmentBuilderSheetState extends State<AssessmentBuilderSheet> {
         elevation: 0,
         side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        minimumSize: const Size(0, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
       ),
     );

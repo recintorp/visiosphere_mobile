@@ -308,7 +308,7 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Semantics(
-                label: 'Search by guardian ID, name, or email',
+                label: 'Search by ID, Name, or Email',
                 textField: true,
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 48),
@@ -542,13 +542,14 @@ class _AdminGuardiansScreenState extends State<AdminGuardiansScreen>
             icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF0F172A), size: 28),
             onPressed: widget.onMenuTap ?? () => Scaffold.of(context).openDrawer(),
           ),
-          Image.asset(
-            'assets/images/visio.png',
-            semanticLabel: 'VisioSphere',
-            height: 34,
-            fit: BoxFit.contain,
-            color: isDark ? Colors.white : const Color(0xFF0066CC),
-            errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
+          ExcludeSemantics(
+            child: Image.asset(
+              'assets/images/visio.png',
+              height: 34,
+              fit: BoxFit.contain,
+              color: isDark ? Colors.white : const Color(0xFF0066CC),
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.security, color: Color(0xFF00A8E8), size: 32),
+            ),
           ),
           // Was an IconButton with `onPressed: () {}` and a red dot that was
           // painted whether or not anything was unread. See alerts_sheet.dart.

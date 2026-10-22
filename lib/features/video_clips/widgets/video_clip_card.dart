@@ -65,121 +65,122 @@ class VideoClipCard extends StatelessWidget {
     if (clip.duration != null) spoken.write(', ${clip.duration}');
     final String selectPrefix = selected ? 'Selected. ' : 'Not selected. ';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: selected
-              ? const Color(0xFF00A8E8)
-              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-          width: selected ? 2 : 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // In selection mode the thumbnail ticks the checkbox instead of
-          // opening the player. Opening a video on the way to deleting a dozen
-          // clips would make bulk selection unusable.
-          Semantics(
-            button: true,
-            label: selectionMode ? '$selectPrefix$spoken' : 'Play clip. $spoken',
-            excludeSemantics: true,
-            child: GestureDetector(
-            onTap: selectionMode ? onToggleSelect : onSelect,
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _Thumbnail(
-                clip: clip,
-                badge: badge,
-                isDark: isDark,
-                selectionMode: selectionMode,
-                selected: selected,
-              ),
-            ),
-            ),
+    return MergeSemantics(
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFF00A8E8)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+            width: selected ? 2 : 1,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        clip.dateLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        clip.note.isNotEmpty ? clip.note : clip.cameraName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: clip.note.isNotEmpty
-                              ? const Color(0xFF00A8E8)
-                              : (isDark
-                                  ? const Color(0xFF64748B)
-                                  : const Color(0xFF9DABB1)),
-                        ),
-                      ),
-                    ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // In selection mode the thumbnail ticks the checkbox instead of
+            // opening the player. Opening a video on the way to deleting a dozen
+            // clips would make bulk selection unusable.
+            Semantics(
+              button: true,
+              label: selectionMode ? '$selectPrefix$spoken' : 'Play clip. $spoken',
+              child: GestureDetector(
+                onTap: selectionMode ? onToggleSelect : onSelect,
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: _Thumbnail(
+                    clip: clip,
+                    badge: badge,
+                    isDark: isDark,
+                    selectionMode: selectionMode,
+                    selected: selected,
                   ),
                 ),
-                // Hidden during selection mode: per-card actions alongside a
-                // bulk selection are two ways to do the same thing, and the
-                // wrong one is destructive.
-                if (!selectionMode)
-                  PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
-                    iconSize: 16,
-                    tooltip: 'Actions for ${badge.label} clip, '
-                        '${clip.cameraName}, ${clip.dateLabel}',
-                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                    icon: Icon(
-                      Icons.more_horiz_rounded,
-                      color: isDark
-                          ? const Color(0xFF64748B)
-                          : const Color(0xFF9DABB1),
-                    ),
-                    onSelected: (value) {
-                      if (value == 'view') onSelect();
-                      if (value == 'edit') onEdit();
-                      if (value == 'delete') onDelete();
-                    },
-                    itemBuilder: (context) => [
-                      _menuItem('view', 'View Clip', isDark),
-                      _menuItem('edit', 'Edit Details', isDark),
-                      // Deleting footage is admin-only. The backend enforces
-                      // this independently on DELETE /incidents/:id/clip;
-                      // hiding the entry only avoids offering an action that
-                      // returns 403.
-                      if (canDelete)
-                        _menuItem('delete', 'Delete Clip', isDark,
-                            color: const Color(0xFFE11D48)),
-                    ],
-                  ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          clip.dateLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          clip.note.isNotEmpty ? clip.note : clip.cameraName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: clip.note.isNotEmpty
+                                ? const Color(0xFF00A8E8)
+                                : (isDark
+                                    ? const Color(0xFF64748B)
+                                    : const Color(0xFF9DABB1)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Hidden during selection mode: per-card actions alongside a
+                  // bulk selection are two ways to do the same thing, and the
+                  // wrong one is destructive.
+                  if (!selectionMode)
+                    PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      iconSize: 16,
+                      tooltip: 'Actions for ${badge.label} clip, '
+                          '${clip.cameraName}, ${clip.dateLabel}',
+                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                      icon: Icon(
+                        Icons.more_horiz_rounded,
+                        color: isDark
+                            ? const Color(0xFF64748B)
+                            : const Color(0xFF9DABB1),
+                      ),
+                      onSelected: (value) {
+                        if (value == 'view') onSelect();
+                        if (value == 'edit') onEdit();
+                        if (value == 'delete') onDelete();
+                      },
+                      itemBuilder: (context) => [
+                        _menuItem('view', 'View Clip', isDark),
+                        _menuItem('edit', 'Edit Details', isDark),
+                        // Deleting footage is admin-only. The backend enforces
+                        // this independently on DELETE /incidents/:id/clip;
+                        // hiding the entry only avoids offering an action that
+                        // returns 403.
+                        if (canDelete)
+                          _menuItem('delete', 'Delete Clip', isDark,
+                              color: const Color(0xFFE11D48)),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

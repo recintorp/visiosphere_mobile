@@ -93,126 +93,149 @@ class NurseCard extends StatelessWidget {
       container: true,
       button: true,
       label: spoken.toString(),
-      child: GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+      child: MergeSemantics(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.transparent),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark ? Colors.black.withValues(alpha: 0.2) : const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Top Main Content Section
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Circular Avatar
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00A8E8), Color(0xFF0066CC)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0066CC).withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF00A8E8), Color(0xFF0066CC)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0066CC).withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  
-                  // Text and Badges Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    fullName,
-                                    style: TextStyle(
-                                      fontFamily: 'Montserrat',
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w800,
-                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                      letterSpacing: -0.3,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        fullName,
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w800,
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                          letterSpacing: -0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        nurseId,
+                                        style: TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 12,
+                                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    nurseId,
-                                    style: TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 12,
-                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: statusBgColor,
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
-                                ],
-                              ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        status.toUpperCase(),
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          color: statusColor,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 9,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            // Status Dot & Text
+                            const SizedBox(height: 12),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: statusBgColor,
-                                borderRadius: BorderRadius.circular(20),
+                                color: setupBgColor,
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                                  ),
-                                  const SizedBox(width: 6),
+                                  Icon(setupIcon, size: 12, color: setupTextColor),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    status.toUpperCase(),
+                                    setupStatusText,
                                     style: TextStyle(
                                       fontFamily: 'Montserrat',
-                                      color: statusColor,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 9,
-                                      letterSpacing: 0.5,
+                                      color: setupTextColor,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10,
+                                      letterSpacing: 0.2,
                                     ),
                                   ),
                                 ],
@@ -220,100 +243,66 @@ class NurseCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        
-                        // Setup Status Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: setupBgColor,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(setupIcon, size: 12, color: setupTextColor),
-                              const SizedBox(width: 4),
-                              Text(
-                                setupStatusText,
-                                style: TextStyle(
-                                  fontFamily: 'Montserrat',
-                                  color: setupTextColor,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 10,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Bottom Footer Section (House & Elders)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC), 
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Grace's only — see Facilities.hasHouseChoice. Kept as an empty
-                  // box rather than removed: this footer is spaceBetween, so
-                  // dropping the child outright would slide the item on the
-                  // right over to the left.
-                  if (!showHouse)
-                    const SizedBox.shrink()
-                  else
-                    Row(
-                      children: [
-                        Icon(Icons.home_work_rounded, size: 16, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
-                        const SizedBox(width: 6),
-                        Text(
-                          house,
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  if (!showAssignedCount)
-                    const SizedBox.shrink()
-                  else
-                  Row(
-                    children: [
-                      Icon(Icons.people_alt_rounded, size: 16, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$assignedCount Elders',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (!showHouse)
+                        const SizedBox.shrink()
+                      else
+                        Row(
+                          children: [
+                            Icon(Icons.home_work_rounded, size: 16, color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                            const SizedBox(width: 6),
+                            Text(
+                              house,
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      if (!showAssignedCount)
+                        const SizedBox.shrink()
+                      else
+                        Row(
+                          children: [
+                            Icon(Icons.people_alt_rounded, size: 16, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF00A8E8)),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$assignedCount Elders',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
